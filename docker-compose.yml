@@ -9,12 +9,14 @@ services:
     environment:
       - VITE_QUESTION_API=${VITE_QUESTION_API:-http://localhost:8001}
       - VITE_MATCHING_API=${VITE_MATCHING_API:-http://localhost:8002}
-      - VITE_COLLABORATION_API=${VITE_COLLABORATION_API:-http://localhost:8003}
+      - VITE_HISTORY_API=${VITE_HISTORY_API:-http://localhost:8003}
       - VITE_USER_API=${VITE_USER_API:-http://localhost:8004}
+      - VITE_USER_API=${VITE_COLLABORATION_API:-http://localhost:8005}
     depends_on:
       - user_service
       - question_service
       - matching_service
+      - history_service
       - collaboration_service
 
   # Microservices (All using internal port 8000)
@@ -60,25 +62,25 @@ services:
       - ./matching_service:/app
     restart: unless-stopped
 
-  collaboration_service:
-    build: ./collaboration_service
+  history_service:
+    build: ./history_service
     ports:
-      - "${COLLABORATION_PORT:-8003}:8000"
+      - "${HISTORY_PORT:-8003}:8000"
     environment:
       - DEBUG=${DEBUG:-True}
       - SECRET_KEY=${SECRET_KEY}
       - PORT=8000
-      - DB_HOST=collaboration_db
+      - DB_HOST=history_db
       - DB_PORT=5432
-      - DB_NAME=collaboration_db
+      - DB_NAME=history_db
       - DB_USER=${POSTGRES_USER:-postgres}
       - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
     depends_on:
-      collaboration_db:
+      history_db:
         condition: service_healthy
     volumes:
-      - ./collaboration_service:/app
+      - ./history_service:/app
     restart: unless-stopped
 
   user_service:
@@ -100,6 +102,26 @@ services:
         condition: service_healthy
     volumes:
       - ./user_service:/app
+    restart: unless-stopped
+
+  # Collaboration Service
+  collaboration_service:
+    build: ./collaboration_service
+    ports:
+      - "${COLLABORATION_PORT:-8005}:8005"
+    environment:
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+    volumes:
+      - ./collaboration_service:/app
+    restart: unless-stopped
+
+  # Redis Service for Collaboration Service
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
     restart: unless-stopped
 
   # Database Services
@@ -133,16 +155,16 @@ services:
       retries: 5
       start_period: 10s
 
-  collaboration_db:
+  history_db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_DB: collaboration_db
+      POSTGRES_DB: history_db
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
-      - collaboration_data:/var/lib/postgresql/data
+      - history_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d collaboration_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d history_db"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -166,5 +188,5 @@ services:
 volumes:
   question_data:
   matching_data:
-  collaboration_data:
+  history_data:
   user_data:

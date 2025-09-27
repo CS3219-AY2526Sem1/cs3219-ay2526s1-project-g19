@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
+    'history',
 ]
 
 MIDDLEWARE = [
@@ -54,7 +55,7 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_CREDENTIALS = True
 
-ROOT_URLCONF = 'collaboration_service.urls'
+ROOT_URLCONF = 'history_service.urls'
 
 TEMPLATES = [
     {
@@ -72,7 +73,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'collaboration_service.wsgi.application'
+WSGI_APPLICATION = 'history_service.wsgi.application'
 
 # Database configuration
 DATABASE_URL = config('DATABASE_URL', default=None)
@@ -88,10 +89,10 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': config('DB_NAME', default='collaboration_db'),
+            'NAME': config('DB_NAME', default='history_db'),
             'USER': config('DB_USER', default='postgres'),
             'PASSWORD': config('DB_PASSWORD', default='postgres'),
-            'HOST': config('DB_HOST', default='collaboration_db'),
+            'HOST': config('DB_HOST', default='history_db'),
             'PORT': config('DB_PORT', default='5432'),
         }
     }
