@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  # Frontend Production Config
+  frontend:
+    environment:
+      - NODE_ENV=production
+      - VITE_QUESTION_API=${VITE_QUESTION_API}
+      - VITE_MATCHING_API=${VITE_MATCHING_API}
+      - VITE_COLLABORATION_API=${VITE_COLLABORATION_API}
+      - VITE_USER_API=${VITE_USER_API}
+    restart: unless-stopped
+    volumes: []
+
+  # Question Service Production Config
+  question_service:
+    environment:
+      - DEBUG=False
+      - SECRET_KEY=${SECRET_KEY}
+      - PORT=8000
+      - DATABASE_URL=${QUESTION_DATABASE_URL}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+    restart: unless-stopped
+    volumes: []
+
+  # Matching Service Production Config
+  matching_service:
+    environment:
+      - DEBUG=False
+      - SECRET_KEY=${SECRET_KEY}
+      - PORT=8000
+      - DATABASE_URL=${MATCHING_DATABASE_URL}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+    restart: unless-stopped
+    volumes: []
+
+  # Collaboration Service Production Config
+  collaboration_service:
+    environment:
+      - DEBUG=False
+      - SECRET_KEY=${SECRET_KEY}
+      - PORT=8000
+      - DATABASE_URL=${COLLABORATION_DATABASE_URL}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+    restart: unless-stopped
+    volumes: []
+
+  # User Service Production Config
+  user_service:
+    environment:
+      - DEBUG=False
+      - SECRET_KEY=${SECRET_KEY}
+      - PORT=8000
+      - DATABASE_URL=${USER_DATABASE_URL}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+    restart: unless-stopped
+    volumes: []
+
+  # Disable all container databases in production
+  question_db:
+    deploy:
+      replicas: 0
+
+  matching_db:
+    deploy:
+      replicas: 0
+
+  collaboration_db:
+    deploy:
+      replicas: 0
+
+  user_db:
+    deploy:
+      replicas: 0
