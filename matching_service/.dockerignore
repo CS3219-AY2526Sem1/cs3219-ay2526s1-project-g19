@@ -1,0 +1,15 @@
+# Ignore environment files
+.env
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore log files
+*.log
+
+# Optional: ignore Dockerfile backups or other temp files
+*.swp
+*.tmp

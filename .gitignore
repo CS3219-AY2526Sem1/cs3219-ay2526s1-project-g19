@@ -1,0 +1,22 @@
+# Virtual environment
+/venv/
+
+# Environment files
+.env
+.env.production
+
+# Python cache files
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+# Django static files
+**/staticfiles/
+# Django migrations cache
+**/migrations/__pycache__/
+
+# Log files
+**/*.log
+
+# Docker override files
+**/docker-compose.override.yml

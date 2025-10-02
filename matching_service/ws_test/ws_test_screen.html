@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Chat</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        input, select, button { margin: 5px; }
+        ul { list-style-type: none; padding-left: 0; }
+        li { padding: 2px 0; }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Chat</h1>
+
+    <!-- User ID -->
+    <label for="userIdInput">User ID:</label>
+    <input type="text" id="userIdInput" placeholder="Enter user ID" autocomplete="off"/>
+    <button id="connectBtn">Connect</button>
+    <button id="disconnectBtn">Disconnect</button>
+    <br>
+
+    <!-- Criteria Selection -->
+    <label for="topicSelect">Topics:</label>
+    <select id="topicSelect" multiple>
+        <option value="sorting">Sorting</option>
+        <option value="searching">Searching</option>
+        <option value="linkedlist">LinkedList</option>
+        <option value="trees">Trees</option>
+        <option value="dynamic programming">Dynamic Programming</option>
+    </select>
+
+    <label for="difficultySelect">Difficulty:</label>
+    <select id="difficultySelect" multiple>
+        <option value="easy">Easy</option>
+        <option value="medium">Medium</option>
+        <option value="hard">Hard</option>
+    </select>
+
+    <ul id="messages"></ul>
+
+    <script>
+        let ws;
+
+        function printMessage(msg) {
+            const messages = document.getElementById('messages');
+            const message = document.createElement('li');
+            message.textContent = msg;
+            messages.appendChild(message);
+        }
+
+        function getSelectedValues(selectId) {
+            const select = document.getElementById(selectId);
+            return Array.from(select.selectedOptions).map(opt => opt.value);
+        }
+
+        document.getElementById("connectBtn").onclick = function() {
+            const userId = document.getElementById("userIdInput").value.trim();
+            const topics = getSelectedValues("topicSelect");
+            const difficulties = getSelectedValues("difficultySelect");
+
+            if (!userId) { alert("Please enter a user ID."); return; }
+            if (topics.length === 0) { alert("Please select at least one topic."); return; }
+
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                ws = new WebSocket(`ws://localhost:8001/api/ws?user_id=${userId}`);
+
+                ws.onopen = function() {
+                    printMessage(`Connected as user ${userId}`);
+
+                    fetch("http://127.0.0.1:8001/api/match", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            user_id: userId,
+                            criteria: { topics: topics, difficulty: difficulties }
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(data => printMessage(`Match API response: ${data}`))
+                    .catch(err => printMessage(`Error calling /api/match: ${err}`));
+
+                    printMessage(`Criteria sent: topics: [${topics.join(", ")}], difficulty: [${difficulties.join(", ")}]`);
+                };
+
+                ws.onmessage = function(event) {
+                    const messages = document.getElementById('messages');
+
+                    try {
+                        const data = JSON.parse(event.data);  // parse JSON
+
+                        const topic = data.criteria?.topic ?? "N/A";
+                        const difficulty = data.criteria?.difficulty ?? "N/A";
+                        const language = data.criteria?.language ?? data.criteria?.langugage ?? "N/A"; // handle typo
+
+                        const formatted = `
+                            Status: ${data.status ?? "N/A"}
+                            Matched User ID: ${data.matched_user_id ?? "N/A"}
+                            Criteria:
+                            Topic: ${topic}
+                            Difficulty: ${difficulty}
+                            Language: ${language}
+                        `.trim();
+
+                        const message = document.createElement('li');
+                        message.textContent = formatted;
+                        messages.appendChild(message);
+                    } catch (err) {
+                        printMessage(err)
+                        // fallback if message is not JSON
+                        const message = document.createElement('li');
+                        message.textContent = event.data;
+                        messages.appendChild(message);
+                    }
+                };
+
+
+                ws.onclose = function() {
+                    printMessage("WebSocket connection closed.");
+                };
+
+                ws.onerror = function(err) {
+                    printMessage("WebSocket error: " + err);
+                };
+            }
+        };
+
+        document.getElementById("disconnectBtn").onclick = function() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.close();
+                ws = null;
+            }
+        };
+    </script>
+</body>
+</html>

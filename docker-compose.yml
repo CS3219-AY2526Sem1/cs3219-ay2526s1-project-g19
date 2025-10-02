@@ -1,0 +1,207 @@
+version: '3.8'
+
+services:
+  # Frontend Service
+  frontend:
+    build: ./frontend
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    environment:
+      - VITE_QUESTION_API=${VITE_QUESTION_API:-http://localhost:8001}
+      - VITE_MATCHING_API=${VITE_MATCHING_API:-http://localhost:8002}
+      - VITE_HISTORY_API=${VITE_HISTORY_API:-http://localhost:8003}
+      - VITE_USER_API=${VITE_USER_API:-http://localhost:8004}
+      - VITE_COLLABORATION_API=${VITE_COLLABORATION_API:-http://localhost:8005}
+      - VITE_CHAT_API=${VITE_CHAT_API:-http://localhost:8006}
+    depends_on:
+      - user_service
+      - question_service
+      - matching_service
+      - history_service
+      - collaboration_service
+      - chat_service
+
+  # Microservices (All using internal port 8000)
+  question_service:
+    build: ./question_service
+    ports:
+      - "${QUESTION_PORT:-8001}:8000"
+    environment:
+      - DEBUG=${DEBUG:-True}
+      - SECRET_KEY=${SECRET_KEY}
+      - PORT=8000
+      - DB_HOST=question_db
+      - DB_PORT=5432
+      - DB_NAME=question_db
+      - DB_USER=${POSTGRES_USER:-postgres}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+    depends_on:
+      question_db:
+        condition: service_healthy
+    volumes:
+      - ./question_service:/app
+    restart: unless-stopped
+
+  matching_service:
+    build: ./matching_service
+    ports:
+      - "${MATCHING_PORT:-8002}:8000"
+    environment:
+      - DEBUG=${DEBUG:-True}
+      - SECRET_KEY=${SECRET_KEY}
+      - PORT=8000
+      - DB_HOST=matching_db
+      - DB_PORT=5432
+      - DB_NAME=matching_db
+      - DB_USER=${POSTGRES_USER:-postgres}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+    depends_on:
+      matching_db:
+        condition: service_healthy
+    volumes:
+      - ./matching_service:/app
+    restart: unless-stopped
+
+  history_service:
+    build: ./history_service
+    ports:
+      - "${HISTORY_PORT:-8003}:8000"
+    environment:
+      - DEBUG=${DEBUG:-True}
+      - SECRET_KEY=${SECRET_KEY}
+      - PORT=8000
+      - DB_HOST=history_db
+      - DB_PORT=5432
+      - DB_NAME=history_db
+      - DB_USER=${POSTGRES_USER:-postgres}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+    depends_on:
+      history_db:
+        condition: service_healthy
+    volumes:
+      - ./history_service:/app
+    restart: unless-stopped
+
+  user_service:
+    build: ./user_service
+    ports:
+      - "${USER_PORT:-8004}:8000"
+    environment:
+      - DEBUG=${DEBUG:-True}
+      - SECRET_KEY=${SECRET_KEY}
+      - PORT=8000
+      - DB_HOST=user_db
+      - DB_PORT=5432
+      - DB_NAME=user_db
+      - DB_USER=${POSTGRES_USER:-postgres}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+    depends_on:
+      user_db:
+        condition: service_healthy
+    volumes:
+      - ./user_service:/app
+    restart: unless-stopped
+
+  # Collaboration Service
+  collaboration_service:
+    build: ./collaboration_service
+    ports:
+      - "${COLLABORATION_PORT:-8005}:8005"
+    environment:
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+    volumes:
+      - ./collaboration_service:/app
+    restart: unless-stopped
+
+  # Chat Service
+  chat_service:
+    build: ./chat_service
+    ports:
+      - "${CHAT_PORT:-8006}:8006"
+    environment:
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+    volumes:
+      - ./chat_service:/app
+    restart: unless-stopped
+
+  # Redis Service for Collaboration and Chat Services
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  # Database Services
+  question_db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: question_db
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - question_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d question_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  matching_db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: matching_db
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - matching_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d matching_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  history_db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: history_db
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - history_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d history_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  user_db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: user_db
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - user_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d user_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  question_data:
+  matching_data:
+  history_data:
+  user_data:

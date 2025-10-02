@@ -1,0 +1,16 @@
+services:
+  app:
+    build: .
+    container_name: matching_service
+    ports:
+      - "8001:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - ENV=prd
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+  redis:
+    image: redis:8
+    ports:
+      - 6379:6379
