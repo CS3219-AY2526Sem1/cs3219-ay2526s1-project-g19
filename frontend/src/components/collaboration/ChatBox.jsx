@@ -19,7 +19,7 @@ const ChatBox = ({ room, currentUsername }) => {
 
   useEffect(() => {
     // Initialize chat socket
-    chatSocketRef.current = io(import.meta.env.VITE_CHAT_API);
+    chatSocketRef.current = io(import.meta.env.VITE_CHAT_SERVICE_URL);
 
     chatSocketRef.current.on("connect", () => {
       console.log(`Connected to chat server with SID ${chatSocketRef.current.id}`);

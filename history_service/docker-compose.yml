@@ -1,0 +1,66 @@
+# History Service - Standalone Configuration
+# Run independently: cd history_service && docker-compose up
+
+services:
+  history_service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: peerprep_history_service
+    ports:
+      - "${HISTORY_SERVICE_PORT:-8003}:8000"
+    environment:
+      - DEBUG=${DEBUG:-true}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      - DATABASE_URL=${HISTORY_DATABASE_URL}
+      - DB_HOST=${HISTORY_DB_HOST:-history_db}
+      - DB_PORT=${HISTORY_DB_PORT:-5432}
+      - DB_NAME=${HISTORY_DB_NAME:-history_db}
+      - DB_USER=${HISTORY_DB_USER:-peerprep}
+      - DB_PASSWORD=${HISTORY_DB_PASSWORD:-peerprep_dev_password}
+    volumes:
+      - ./:/app:rw
+    networks:
+      - shared_network
+      - history_network
+    depends_on:
+      history_db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  history_db:
+    image: postgres:15-alpine
+    container_name: peerprep_history_db
+    environment:
+      - POSTGRES_DB=${HISTORY_DB_NAME:-history_db}
+      - POSTGRES_USER=${HISTORY_DB_USER:-peerprep}
+      - POSTGRES_PASSWORD=${HISTORY_DB_PASSWORD:-peerprep_dev_password}
+    volumes:
+      - history_db_data:/var/lib/postgresql/data
+    networks:
+      - history_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${HISTORY_DB_USER:-peerprep} -d ${HISTORY_DB_NAME:-history_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  history_db_data:
+    name: peerprep_history_db_data
+
+networks:
+  shared_network:
+    external: true
+    name: peerprep_shared_network
+  history_network:
+    driver: bridge
+    name: peerprep_history_network

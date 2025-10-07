@@ -1,0 +1,59 @@
+# Chat Service - Standalone Configuration
+# Run independently: cd chat_service && docker-compose up
+
+services:
+  chat_service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: peerprep_chat_service
+    ports:
+      - "${CHAT_SERVICE_PORT:-8006}:8006"
+    environment:
+      - DEBUG=${DEBUG:-true}
+      - PORT=8006
+      - REDIS_URL=${CHAT_REDIS_URL}
+      - REDIS_HOST=${CHAT_REDIS_HOST:-chat_redis}
+      - REDIS_PORT=${CHAT_REDIS_PORT:-6379}
+    volumes:
+      - ./:/app:rw
+    networks:
+      - shared_network
+      - chat_network
+    depends_on:
+      chat_redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8006/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  chat_redis:
+    image: redis:7-alpine
+    container_name: peerprep_chat_redis
+    command: redis-server --appendonly yes
+    volumes:
+      - chat_redis_data:/data
+    networks:
+      - chat_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  chat_redis_data:
+    name: peerprep_chat_redis_data
+
+networks:
+  shared_network:
+    external: true
+    name: peerprep_shared_network
+  chat_network:
+    driver: bridge
+    name: peerprep_chat_network

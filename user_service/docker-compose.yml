@@ -1,0 +1,66 @@
+# User Service - Standalone Configuration
+# Run independently: cd user_service && docker-compose up
+
+services:
+  user_service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: peerprep_user_service
+    ports:
+      - "${USER_SERVICE_PORT:-8004}:8000"
+    environment:
+      - DEBUG=${DEBUG:-true}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      - DATABASE_URL=${USER_DATABASE_URL}
+      - DB_HOST=${USER_DB_HOST:-user_db}
+      - DB_PORT=${USER_DB_PORT:-5432}
+      - DB_NAME=${USER_DB_NAME:-user_db}
+      - DB_USER=${USER_DB_USER:-peerprep}
+      - DB_PASSWORD=${USER_DB_PASSWORD:-peerprep_dev_password}
+    volumes:
+      - ./:/app:rw
+    networks:
+      - shared_network
+      - user_network
+    depends_on:
+      user_db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  user_db:
+    image: postgres:15-alpine
+    container_name: peerprep_user_db
+    environment:
+      - POSTGRES_DB=${USER_DB_NAME:-user_db}
+      - POSTGRES_USER=${USER_DB_USER:-peerprep}
+      - POSTGRES_PASSWORD=${USER_DB_PASSWORD:-peerprep_dev_password}
+    volumes:
+      - user_db_data:/var/lib/postgresql/data
+    networks:
+      - user_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${USER_DB_USER:-peerprep} -d ${USER_DB_NAME:-user_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  user_db_data:
+    name: peerprep_user_db_data
+
+networks:
+  shared_network:
+    external: true
+    name: peerprep_shared_network
+  user_network:
+    driver: bridge
+    name: peerprep_user_network

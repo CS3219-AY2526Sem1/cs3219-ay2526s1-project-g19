@@ -33,7 +33,7 @@ const CodeEditor = ({ room, currentUsername }) => {
 
     useEffect(() => {
         // Initialize collaboration socket
-        collabSocketRef.current = io(import.meta.env.VITE_COLLABORATION_API)
+        collabSocketRef.current = io(import.meta.env.VITE_COLLABORATION_SERVICE_URL)
 
         collabSocketRef.current.on("connect", () => {
             console.log(`Connected to collab server with SID ${collabSocketRef.current.id}`)

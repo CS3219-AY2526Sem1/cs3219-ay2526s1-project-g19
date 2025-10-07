@@ -1,74 +1,175 @@
-version: '3.8'
+# =============================================================================
+# PeerPrep Microservices - Production Overrides
+# =============================================================================
+# This file overrides development settings for production deployment
+#
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+#
+# Key Changes in Production:
+# - Use external managed databases (disable local DBs)
+# - Use external managed Redis (disable local Redis)
+# - Disable DEBUG mode
+# - Remove code volume mounts (images contain code)
+# - Set production restart policies
+# - Use production environment variables
+# =============================================================================
 
 services:
-  # Frontend Production Config
+  # ---------------------------------------------------------------------------
+  # Frontend - Production Settings
+  # ---------------------------------------------------------------------------
   frontend:
     environment:
       - NODE_ENV=production
-      - VITE_QUESTION_API=${VITE_QUESTION_API}
-      - VITE_MATCHING_API=${VITE_MATCHING_API}
-      - VITE_COLLABORATION_API=${VITE_COLLABORATION_API}
-      - VITE_USER_API=${VITE_USER_API}
-    restart: unless-stopped
-    volumes: []
+    volumes: []  # Remove development volumes
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
 
-  # Question Service Production Config
+  # ---------------------------------------------------------------------------
+  # Question Service - Production Settings
+  # ---------------------------------------------------------------------------
   question_service:
     environment:
-      - DEBUG=False
-      - SECRET_KEY=${SECRET_KEY}
-      - PORT=8000
-      - DATABASE_URL=${QUESTION_DATABASE_URL}
-      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
-    restart: unless-stopped
-    volumes: []
+      - DEBUG=false
+      - SECRET_KEY=${PROD_SECRET_KEY}
+      - ALLOWED_HOSTS=${PROD_ALLOWED_HOSTS}
+      - DATABASE_URL=${PROD_QUESTION_DATABASE_URL}
+    volumes: []  # Remove development volumes
+    deploy:
+      replicas: 2  # Scale for high availability
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
 
-  # Matching Service Production Config
-  matching_service:
-    environment:
-      - DEBUG=False
-      - SECRET_KEY=${SECRET_KEY}
-      - PORT=8000
-      - DATABASE_URL=${MATCHING_DATABASE_URL}
-      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
-    restart: unless-stopped
-    volumes: []
-
-  # Collaboration Service Production Config
-  collaboration_service:
-    environment:
-      - DEBUG=False
-      - SECRET_KEY=${SECRET_KEY}
-      - PORT=8000
-      - DATABASE_URL=${COLLABORATION_DATABASE_URL}
-      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
-    restart: unless-stopped
-    volumes: []
-
-  # User Service Production Config
-  user_service:
-    environment:
-      - DEBUG=False
-      - SECRET_KEY=${SECRET_KEY}
-      - PORT=8000
-      - DATABASE_URL=${USER_DATABASE_URL}
-      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
-    restart: unless-stopped
-    volumes: []
-
-  # Disable all container databases in production
   question_db:
     deploy:
-      replicas: 0
+      replicas: 0  # Disable local database in production
+
+  # ---------------------------------------------------------------------------
+  # Matching Service - Production Settings
+  # ---------------------------------------------------------------------------
+  matching_service:
+    environment:
+      - DEBUG=false
+      - DATABASE_URL=${PROD_MATCHING_DATABASE_URL}
+      - REDIS_URL=${PROD_MATCHING_REDIS_URL}
+    volumes: []  # Remove development volumes
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
 
   matching_db:
     deploy:
-      replicas: 0
+      replicas: 0  # Disable local database in production
 
-  collaboration_db:
+  matching_redis:
     deploy:
-      replicas: 0
+      replicas: 0  # Disable local Redis in production
+
+  # ---------------------------------------------------------------------------
+  # History Service - Production Settings
+  # ---------------------------------------------------------------------------
+  history_service:
+    environment:
+      - DEBUG=false
+      - SECRET_KEY=${PROD_SECRET_KEY}
+      - ALLOWED_HOSTS=${PROD_ALLOWED_HOSTS}
+      - DATABASE_URL=${PROD_HISTORY_DATABASE_URL}
+    volumes: []  # Remove development volumes
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  history_db:
+    deploy:
+      replicas: 0  # Disable local database in production
+
+  # ---------------------------------------------------------------------------
+  # User Service - Production Settings
+  # ---------------------------------------------------------------------------
+  user_service:
+    environment:
+      - DEBUG=false
+      - SECRET_KEY=${PROD_SECRET_KEY}
+      - ALLOWED_HOSTS=${PROD_ALLOWED_HOSTS}
+      - DATABASE_URL=${PROD_USER_DATABASE_URL}
+    volumes: []  # Remove development volumes
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
 
   user_db:
     deploy:
-      replicas: 0
+      replicas: 0  # Disable local database in production
+
+  # ---------------------------------------------------------------------------
+  # Collaboration Service - Production Settings
+  # ---------------------------------------------------------------------------
+  collaboration_service:
+    environment:
+      - DEBUG=false
+      - REDIS_URL=${PROD_COLLABORATION_REDIS_URL}
+    volumes: []  # Remove development volumes
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  collaboration_redis:
+    deploy:
+      replicas: 0  # Disable local Redis in production
+
+  # ---------------------------------------------------------------------------
+  # Chat Service - Production Settings
+  # ---------------------------------------------------------------------------
+  chat_service:
+    environment:
+      - DEBUG=false
+      - REDIS_URL=${PROD_CHAT_REDIS_URL}
+    volumes: []  # Remove development volumes
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  chat_redis:
+    deploy:
+      replicas: 0  # Disable local Redis in production

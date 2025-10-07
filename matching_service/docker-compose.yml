@@ -1,16 +1,86 @@
+# Matching Service - Standalone Configuration
+# Run independently: cd matching_service && docker-compose up
+
 services:
-  app:
-    build: .
-    container_name: matching_service
+  matching_service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: peerprep_matching_service
     ports:
-      - "8001:8000"
+      - "${MATCHING_SERVICE_PORT:-8002}:8000"
     environment:
-      - PYTHONUNBUFFERED=1
-      - PYTHONDONTWRITEBYTECODE=1
-      - ENV=prd
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-  redis:
-    image: redis:8
-    ports:
-      - 6379:6379
+      - DEBUG=${DEBUG:-true}
+      - DATABASE_URL=${MATCHING_DATABASE_URL}
+      - DB_HOST=${MATCHING_DB_HOST:-matching_db}
+      - DB_PORT=${MATCHING_DB_PORT:-5432}
+      - DB_NAME=${MATCHING_DB_NAME:-matching_db}
+      - DB_USER=${MATCHING_DB_USER:-peerprep}
+      - DB_PASSWORD=${MATCHING_DB_PASSWORD:-peerprep_dev_password}
+      - REDIS_URL=${MATCHING_REDIS_URL}
+      - REDIS_HOST=${MATCHING_REDIS_HOST:-matching_redis}
+      - REDIS_PORT=${MATCHING_REDIS_PORT:-6379}
+    volumes:
+      - ./:/app:rw
+    networks:
+      - shared_network
+      - matching_network
+    depends_on:
+      matching_db:
+        condition: service_healthy
+      matching_redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  matching_db:
+    image: postgres:15-alpine
+    container_name: peerprep_matching_db
+    environment:
+      - POSTGRES_DB=${MATCHING_DB_NAME:-matching_db}
+      - POSTGRES_USER=${MATCHING_DB_USER:-peerprep}
+      - POSTGRES_PASSWORD=${MATCHING_DB_PASSWORD:-peerprep_dev_password}
+    volumes:
+      - matching_db_data:/var/lib/postgresql/data
+    networks:
+      - matching_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${MATCHING_DB_USER:-peerprep} -d ${MATCHING_DB_NAME:-matching_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  matching_redis:
+    image: redis:7-alpine
+    container_name: peerprep_matching_redis
+    command: redis-server --appendonly yes
+    volumes:
+      - matching_redis_data:/data
+    networks:
+      - matching_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  matching_db_data:
+    name: peerprep_matching_db_data
+  matching_redis_data:
+    name: peerprep_matching_redis_data
+
+networks:
+  shared_network:
+    external: true
+    name: peerprep_shared_network
+  matching_network:
+    driver: bridge
+    name: peerprep_matching_network

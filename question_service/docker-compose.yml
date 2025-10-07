@@ -1,0 +1,66 @@
+# Question Service - Standalone Configuration
+# Run independently: cd question_service && docker-compose up
+
+services:
+  question_service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: peerprep_question_service
+    ports:
+      - "${QUESTION_SERVICE_PORT:-8001}:8000"
+    environment:
+      - DEBUG=${DEBUG:-true}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      - DATABASE_URL=${QUESTION_DATABASE_URL}
+      - DB_HOST=${QUESTION_DB_HOST:-question_db}
+      - DB_PORT=${QUESTION_DB_PORT:-5432}
+      - DB_NAME=${QUESTION_DB_NAME:-question_db}
+      - DB_USER=${QUESTION_DB_USER:-peerprep}
+      - DB_PASSWORD=${QUESTION_DB_PASSWORD:-peerprep_dev_password}
+    volumes:
+      - ./:/app:rw
+    networks:
+      - shared_network
+      - question_network
+    depends_on:
+      question_db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  question_db:
+    image: postgres:15-alpine
+    container_name: peerprep_question_db
+    environment:
+      - POSTGRES_DB=${QUESTION_DB_NAME:-question_db}
+      - POSTGRES_USER=${QUESTION_DB_USER:-peerprep}
+      - POSTGRES_PASSWORD=${QUESTION_DB_PASSWORD:-peerprep_dev_password}
+    volumes:
+      - question_db_data:/var/lib/postgresql/data
+    networks:
+      - question_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${QUESTION_DB_USER:-peerprep} -d ${QUESTION_DB_NAME:-question_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  question_db_data:
+    name: peerprep_question_db_data
+
+networks:
+  shared_network:
+    external: true
+    name: peerprep_shared_network
+  question_network:
+    driver: bridge
+    name: peerprep_question_network
