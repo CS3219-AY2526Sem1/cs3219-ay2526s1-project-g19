@@ -1266,3 +1266,302 @@ module "ecs_service_schema_registry" {
 
   tags = var.tags
 }
+
+# =============================================================================
+# Phase 7: Kafka Consumers (Background Tasks)
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 11. Session Service Kafka Consumer: Question Chosen
+# -----------------------------------------------------------------------------
+resource "aws_ecs_task_definition" "session_consumer_question_chosen" {
+  family                   = "${var.project_name}-${var.environment}-session-consumer-question-chosen"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = 256
+  memory                   = 512
+  execution_role_arn       = module.ecs_cluster.task_execution_role_arn
+  task_role_arn            = module.ecs_cluster.task_role_arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "session-consumer-question-chosen"
+      image     = "${aws_ecr_repository.services["session-service"].repository_url}:latest"
+      command   = ["python", "-m", "kafka.consumers.question_chosen"]
+      essential = true
+
+      environment = [
+        { name = "DEBUG", value = "false" },
+        { name = "SECRET_KEY", value = var.secret_key },
+        { name = "SKIP_DB_SETUP", value = "true" },
+        
+        # Database Connection
+        { name = "DATABASE_URL", value = "postgresql://${var.db_username}:${var.db_password}@${module.rds_session.db_endpoint}/session_db" },
+        { name = "DB_HOST", value = module.rds_session.db_host },
+        { name = "DB_PORT", value = "5432" },
+        { name = "DB_NAME", value = "session_db" },
+        { name = "DB_USER", value = var.db_username },
+        { name = "DB_PASSWORD", value = var.db_password },
+        
+        # Kafka Configuration
+        { name = "KAFKA_BOOTSTRAP_SERVERS", value = "kafka.${module.service_discovery.namespace_name}:29092" },
+        { name = "SCHEMA_REGISTRY_URL", value = "http://schema-registry.${module.service_discovery.namespace_name}:8081" },
+        
+        # Kafka Topics
+        { name = "TOPIC_QUESTION_CHOSEN", value = var.kafka_topic_question_chosen },
+        { name = "TOPIC_SESSION_CREATED", value = var.kafka_topic_session_created },
+        
+        # Consumer Group
+        { name = "SESSION_GROUP_ID", value = "session-service-group" },
+        
+        # Service URLs
+        { name = "USER_SERVICE_URL", value = "http://user-service.${module.service_discovery.namespace_name}:8000" },
+        { name = "QUESTION_SERVICE_URL", value = "http://question-service.${module.service_discovery.namespace_name}:8000" }
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = module.ecs_cluster.cloudwatch_log_group_name
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "session-consumer-question-chosen"
+        }
+      }
+    }
+  ])
+
+  tags = merge(
+    var.tags,
+    {
+      Name    = "${var.project_name}-${var.environment}-session-consumer-question-chosen"
+      Service = "session-service"
+      Type    = "kafka-consumer"
+    }
+  )
+}
+
+resource "aws_ecs_service" "session_consumer_question_chosen" {
+  name            = "session-consumer-question-chosen"
+  cluster         = module.ecs_cluster.cluster_id
+  task_definition = aws_ecs_task_definition.session_consumer_question_chosen.arn
+  desired_count   = 1  # Only 1 consumer needed per topic
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = module.vpc.private_subnet_ids
+    security_groups  = [module.security_groups.ecs_security_group_id]
+    assign_public_ip = false
+  }
+
+  # Depends on Kafka and Schema Registry being available
+  depends_on = [
+    module.ecs_service_kafka,
+    module.ecs_service_schema_registry
+  ]
+
+  tags = merge(
+    var.tags,
+    {
+      Name    = "${var.project_name}-${var.environment}-session-consumer-question-chosen"
+      Service = "session-service"
+      Type    = "kafka-consumer"
+    }
+  )
+}
+
+# -----------------------------------------------------------------------------
+# 12. Session Service Kafka Consumer: Session End
+# -----------------------------------------------------------------------------
+resource "aws_ecs_task_definition" "session_consumer_session_end" {
+  family                   = "${var.project_name}-${var.environment}-session-consumer-session-end"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = 256
+  memory                   = 512
+  execution_role_arn       = module.ecs_cluster.task_execution_role_arn
+  task_role_arn            = module.ecs_cluster.task_role_arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "session-consumer-session-end"
+      image     = "${aws_ecr_repository.services["session-service"].repository_url}:latest"
+      command   = ["python", "-m", "kafka.consumers.session_end"]
+      essential = true
+
+      environment = [
+        { name = "DEBUG", value = "false" },
+        { name = "SECRET_KEY", value = var.secret_key },
+        { name = "SKIP_DB_SETUP", value = "true" },
+        
+        # Database Connection
+        { name = "DATABASE_URL", value = "postgresql://${var.db_username}:${var.db_password}@${module.rds_session.db_endpoint}/session_db" },
+        { name = "DB_HOST", value = module.rds_session.db_host },
+        { name = "DB_PORT", value = "5432" },
+        { name = "DB_NAME", value = "session_db" },
+        { name = "DB_USER", value = var.db_username },
+        { name = "DB_PASSWORD", value = var.db_password },
+        
+        # Kafka Configuration
+        { name = "KAFKA_BOOTSTRAP_SERVERS", value = "kafka.${module.service_discovery.namespace_name}:29092" },
+        { name = "SCHEMA_REGISTRY_URL", value = "http://schema-registry.${module.service_discovery.namespace_name}:8081" },
+        
+        # Kafka Topics
+        { name = "TOPIC_SESSION_END", value = var.kafka_topic_session_end },
+        
+        # Consumer Group
+        { name = "SESSION_GROUP_ID", value = "session-service-group" },
+        
+        # Service URLs
+        { name = "USER_SERVICE_URL", value = "http://user-service.${module.service_discovery.namespace_name}:8000" },
+        { name = "QUESTION_SERVICE_URL", value = "http://question-service.${module.service_discovery.namespace_name}:8000" }
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = module.ecs_cluster.cloudwatch_log_group_name
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "session-consumer-session-end"
+        }
+      }
+    }
+  ])
+
+  tags = merge(
+    var.tags,
+    {
+      Name    = "${var.project_name}-${var.environment}-session-consumer-session-end"
+      Service = "session-service"
+      Type    = "kafka-consumer"
+    }
+  )
+}
+
+resource "aws_ecs_service" "session_consumer_session_end" {
+  name            = "session-consumer-session-end"
+  cluster         = module.ecs_cluster.cluster_id
+  task_definition = aws_ecs_task_definition.session_consumer_session_end.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = module.vpc.private_subnet_ids
+    security_groups  = [module.security_groups.ecs_security_group_id]
+    assign_public_ip = false
+  }
+
+  depends_on = [
+    module.ecs_service_kafka,
+    module.ecs_service_schema_registry
+  ]
+
+  tags = merge(
+    var.tags,
+    {
+      Name    = "${var.project_name}-${var.environment}-session-consumer-session-end"
+      Service = "session-service"
+      Type    = "kafka-consumer"
+    }
+  )
+}
+
+# -----------------------------------------------------------------------------
+# 13. Matching Service Kafka Consumer: Session Created
+# -----------------------------------------------------------------------------
+resource "aws_ecs_task_definition" "matching_consumer_session_created" {
+  family                   = "${var.project_name}-${var.environment}-matching-consumer-session-created"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = 256
+  memory                   = 512
+  execution_role_arn       = module.ecs_cluster.task_execution_role_arn
+  task_role_arn            = module.ecs_cluster.task_role_arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "matching-consumer-session-created"
+      image     = "${aws_ecr_repository.services["matching-service"].repository_url}:latest"
+      command   = ["python", "-m", "kafka.consumers.session_created"]
+      essential = true
+
+      environment = [
+        { name = "DEBUG", value = "false" },
+        { name = "PORT", value = "8000" },
+        
+        # Database Connection
+        { name = "DATABASE_URL", value = "postgresql://${var.db_username}:${var.db_password}@${module.rds_matching.db_endpoint}/matching_db" },
+        { name = "DB_HOST", value = module.rds_matching.db_host },
+        { name = "DB_PORT", value = "5432" },
+        { name = "DB_NAME", value = "matching_db" },
+        { name = "DB_USER", value = var.db_username },
+        { name = "DB_PASSWORD", value = var.db_password },
+        
+        # Redis Connection
+        { name = "REDIS_URL", value = "redis://${module.elasticache_matching.redis_endpoint}:6379/0" },
+        { name = "REDIS_HOST", value = module.elasticache_matching.redis_endpoint },
+        { name = "REDIS_PORT", value = "6379" },
+        
+        # Kafka Configuration
+        { name = "KAFKA_BOOTSTRAP_SERVERS", value = "kafka.${module.service_discovery.namespace_name}:29092" },
+        { name = "SCHEMA_REGISTRY_URL", value = "http://schema-registry.${module.service_discovery.namespace_name}:8081" },
+        
+        # Kafka Topics
+        { name = "TOPIC_SESSION_CREATED", value = var.kafka_topic_session_created },
+        { name = "TOPIC_MATCH_FOUND", value = var.kafka_topic_match_found },
+        
+        # Consumer Group
+        { name = "MATCHING_GROUP_ID", value = "matching-service-group" },
+        
+        # Service URLs
+        { name = "USER_SERVICE_URL", value = "http://user-service.${module.service_discovery.namespace_name}:8000" },
+        { name = "QUESTION_SERVICE_URL", value = "http://question-service.${module.service_discovery.namespace_name}:8000" }
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = module.ecs_cluster.cloudwatch_log_group_name
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "matching-consumer-session-created"
+        }
+      }
+    }
+  ])
+
+  tags = merge(
+    var.tags,
+    {
+      Name    = "${var.project_name}-${var.environment}-matching-consumer-session-created"
+      Service = "matching-service"
+      Type    = "kafka-consumer"
+    }
+  )
+}
+
+resource "aws_ecs_service" "matching_consumer_session_created" {
+  name            = "matching-consumer-session-created"
+  cluster         = module.ecs_cluster.cluster_id
+  task_definition = aws_ecs_task_definition.matching_consumer_session_created.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = module.vpc.private_subnet_ids
+    security_groups  = [module.security_groups.ecs_security_group_id]
+    assign_public_ip = false
+  }
+
+  depends_on = [
+    module.ecs_service_kafka,
+    module.ecs_service_schema_registry
+  ]
+
+  tags = merge(
+    var.tags,
+    {
+      Name    = "${var.project_name}-${var.environment}-matching-consumer-session-created"
+      Service = "matching-service"
+      Type    = "kafka-consumer"
+    }
+  )
+}
