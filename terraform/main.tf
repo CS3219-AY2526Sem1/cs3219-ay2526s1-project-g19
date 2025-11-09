@@ -1143,3 +1143,126 @@ resource "aws_appautoscaling_policy" "ecs_requests_policy" {
     scale_out_cooldown = 60   # 1 minute
   }
 }
+
+# =============================================================================
+# Phase 6: Kafka Event Infrastructure
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 9. Kafka Broker (KRaft Mode - No Zookeeper)
+# -----------------------------------------------------------------------------
+module "ecs_service_kafka" {
+  source = "./modules/ecs-service"
+
+  project_name = var.project_name
+  environment  = var.environment
+  service_name = "kafka"
+
+  # ECS Configuration
+  cluster_id   = module.ecs_cluster.cluster_id
+  cluster_name = module.ecs_cluster.cluster_name
+  vpc_id       = module.vpc.vpc_id
+
+  # Networking
+  private_subnet_ids = module.vpc.private_subnet_ids
+  security_group_ids = [module.security_groups.ecs_security_group_id]
+
+  # Container Configuration
+  container_image  = "${aws_ecr_repository.services["kafka"].repository_url}:latest"
+  container_port   = 29092
+  container_cpu    = var.kafka_cpu
+  container_memory = var.kafka_memory
+  desired_count    = 1  # Single broker for now
+
+  # Environment Variables
+  environment_variables = {
+    # KRaft mode configuration (no Zookeeper)
+    KAFKA_PROCESS_ROLES                 = "broker,controller"
+    KAFKA_NODE_ID                       = "1"
+    KAFKA_CONTROLLER_QUORUM_VOTERS      = "1@kafka.${module.service_discovery.namespace_name}:29093"
+    KAFKA_CONTROLLER_LISTENER_NAMES     = "CONTROLLER"
+    KAFKA_LISTENERS                     = "PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093"
+    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP = "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+    KAFKA_ADVERTISED_LISTENERS          = "PLAINTEXT://kafka.${module.service_discovery.namespace_name}:29092"
+    KAFKA_INTER_BROKER_LISTENER_NAME    = "PLAINTEXT"
+
+    # Topic configuration
+    KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR = "1"
+    KAFKA_NUM_PARTITIONS                   = "3"
+    KAFKA_LOG_DIRS                        = "/var/lib/kafka/data"
+
+    # Cluster ID (must be consistent)
+    CLUSTER_ID = "Deq3DYCfTWCkO7cIJRLCYQ"
+  }
+
+  # IAM Roles
+  task_execution_role_arn = module.ecs_cluster.task_execution_role_arn
+  task_role_arn           = module.ecs_cluster.task_role_arn
+
+  # CloudWatch Logs
+  log_group_name = module.ecs_cluster.cloudwatch_log_group_name
+  aws_region     = var.aws_region
+
+  # No load balancer (internal service only)
+  enable_load_balancer = false
+
+  # Service Discovery (for internal DNS)
+  enable_service_discovery      = true
+  service_discovery_service_arn = module.service_discovery.service_discovery_services["kafka"]
+
+  tags = var.tags
+}
+
+# -----------------------------------------------------------------------------
+# 10. Schema Registry (Kafka Schema Management)
+# -----------------------------------------------------------------------------
+module "ecs_service_schema_registry" {
+  source = "./modules/ecs-service"
+
+  project_name = var.project_name
+  environment  = var.environment
+  service_name = "schema-registry"
+
+  # ECS Configuration
+  cluster_id   = module.ecs_cluster.cluster_id
+  cluster_name = module.ecs_cluster.cluster_name
+  vpc_id       = module.vpc.vpc_id
+
+  # Networking
+  private_subnet_ids = module.vpc.private_subnet_ids
+  security_group_ids = [module.security_groups.ecs_security_group_id]
+
+  # Container Configuration
+  container_image  = "${aws_ecr_repository.services["schema-registry"].repository_url}:latest"
+  container_port   = 8081
+  container_cpu    = var.schema_registry_cpu
+  container_memory = var.schema_registry_memory
+  desired_count    = 1
+
+  # Environment Variables
+  environment_variables = {
+    SCHEMA_REGISTRY_HOST_NAME               = "schema-registry"
+    SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS = "PLAINTEXT://kafka.${module.service_discovery.namespace_name}:29092"
+    SCHEMA_REGISTRY_LISTENERS               = "http://0.0.0.0:8081"
+  }
+
+  # IAM Roles
+  task_execution_role_arn = module.ecs_cluster.task_execution_role_arn
+  task_role_arn           = module.ecs_cluster.task_role_arn
+
+  # CloudWatch Logs
+  log_group_name = module.ecs_cluster.cloudwatch_log_group_name
+  aws_region     = var.aws_region
+
+  # No load balancer (internal service only)
+  enable_load_balancer = false
+
+  # Service Discovery (for internal DNS)
+  enable_service_discovery      = true
+  service_discovery_service_arn = module.service_discovery.service_discovery_services["schema-registry"]
+
+  # Depends on Kafka being available
+  depends_on = [module.ecs_service_kafka]
+
+  tags = var.tags
+}
