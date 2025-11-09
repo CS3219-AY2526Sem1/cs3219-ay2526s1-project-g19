@@ -15,14 +15,8 @@ terraform {
     }
   }
 
-  # Optional: Uncomment to use S3 backend for state management
-  # backend "s3" {
-  #   bucket         = "peerprep-terraform-state"
-  #   key            = "ecs/terraform.tfstate"
-  #   region         = "ap-southeast-1"
-  #   encrypt        = true
-  #   dynamodb_table = "peerprep-terraform-locks"
-  # }
+  # Remote backend configuration is supplied via -backend-config flags/env vars.
+  backend "s3" {}
 }
 
 # =============================================================================
@@ -118,20 +112,20 @@ resource "aws_db_subnet_group" "main" {
 module "rds_user" {
   source = "./modules/rds"
 
-  name_prefix         = "${var.project_name}-${var.environment}-user"
-  vpc_id              = module.vpc.vpc_id
-  database_subnet_ids = module.vpc.private_subnet_ids
+  name_prefix          = "${var.project_name}-${var.environment}-user"
+  vpc_id               = module.vpc.vpc_id
+  database_subnet_ids  = module.vpc.private_subnet_ids
   db_subnet_group_name = aws_db_subnet_group.main.name
-  security_group_ids  = [module.security_groups.user_db_security_group_id]
+  security_group_ids   = [module.security_groups.user_db_security_group_id]
 
   # Database configuration
-  engine_version      = var.db_engine_version
-  db_instance_class   = var.db_instance_class
-  allocated_storage   = var.db_allocated_storage
+  engine_version        = var.db_engine_version
+  db_instance_class     = var.db_instance_class
+  allocated_storage     = var.db_allocated_storage
   max_allocated_storage = var.db_max_allocated_storage
-  database_names      = ["user_db"]
-  master_username     = var.db_username
-  master_password     = var.db_password
+  database_names        = ["user_db"]
+  master_username       = var.db_username
+  master_password       = var.db_password
 
   # High availability
   multi_az = var.db_multi_az
@@ -274,16 +268,16 @@ resource "aws_elasticache_subnet_group" "main" {
 module "elasticache_matching" {
   source = "./modules/elasticache"
 
-  name_prefix            = "${var.project_name}-${var.environment}-matching"
-  vpc_id                 = module.vpc.vpc_id
-  cache_subnet_ids       = module.vpc.private_subnet_ids
+  name_prefix             = "${var.project_name}-${var.environment}-matching"
+  vpc_id                  = module.vpc.vpc_id
+  cache_subnet_ids        = module.vpc.private_subnet_ids
   cache_subnet_group_name = aws_elasticache_subnet_group.main.name
-  security_group_ids     = [module.security_groups.matching_redis_security_group_id]
+  security_group_ids      = [module.security_groups.matching_redis_security_group_id]
 
   # Redis configuration
-  engine_version   = var.redis_engine_version
-  node_type        = var.redis_node_type
-  num_cache_nodes  = var.redis_num_cache_nodes
+  engine_version  = var.redis_engine_version
+  node_type       = var.redis_node_type
+  num_cache_nodes = var.redis_num_cache_nodes
 
   # Maintenance and backups
   maintenance_window       = "sun:05:00-sun:06:00"
@@ -297,16 +291,16 @@ module "elasticache_matching" {
 module "elasticache_collaboration" {
   source = "./modules/elasticache"
 
-  name_prefix            = "${var.project_name}-${var.environment}-collab"
-  vpc_id                 = module.vpc.vpc_id
-  cache_subnet_ids       = module.vpc.private_subnet_ids
+  name_prefix             = "${var.project_name}-${var.environment}-collab"
+  vpc_id                  = module.vpc.vpc_id
+  cache_subnet_ids        = module.vpc.private_subnet_ids
   cache_subnet_group_name = aws_elasticache_subnet_group.main.name
-  security_group_ids     = [module.security_groups.collaboration_redis_security_group_id]
+  security_group_ids      = [module.security_groups.collaboration_redis_security_group_id]
 
   # Redis configuration
-  engine_version   = var.redis_engine_version
-  node_type        = var.redis_node_type
-  num_cache_nodes  = var.redis_num_cache_nodes
+  engine_version  = var.redis_engine_version
+  node_type       = var.redis_node_type
+  num_cache_nodes = var.redis_num_cache_nodes
 
   # Maintenance and backups
   maintenance_window       = "sun:05:00-sun:06:00"
@@ -320,16 +314,16 @@ module "elasticache_collaboration" {
 module "elasticache_chat" {
   source = "./modules/elasticache"
 
-  name_prefix            = "${var.project_name}-${var.environment}-chat"
-  vpc_id                 = module.vpc.vpc_id
-  cache_subnet_ids       = module.vpc.private_subnet_ids
+  name_prefix             = "${var.project_name}-${var.environment}-chat"
+  vpc_id                  = module.vpc.vpc_id
+  cache_subnet_ids        = module.vpc.private_subnet_ids
   cache_subnet_group_name = aws_elasticache_subnet_group.main.name
-  security_group_ids     = [module.security_groups.chat_redis_security_group_id]
+  security_group_ids      = [module.security_groups.chat_redis_security_group_id]
 
   # Redis configuration
-  engine_version   = var.redis_engine_version
-  node_type        = var.redis_node_type
-  num_cache_nodes  = var.redis_num_cache_nodes
+  engine_version  = var.redis_engine_version
+  node_type       = var.redis_node_type
+  num_cache_nodes = var.redis_num_cache_nodes
 
   # Maintenance and backups
   maintenance_window       = "sun:05:00-sun:06:00"
@@ -406,7 +400,7 @@ locals {
     "user-service"          = {}
     "question-service"      = {}
     "matching-service"      = {}
-    "session-service"       = {}  # Replaces history-service
+    "session-service"       = {} # Replaces history-service
     "execution-service"     = {}
     "collaboration-service" = {}
     "chat-service"          = {}
@@ -416,7 +410,7 @@ locals {
 }
 
 resource "aws_ecr_repository" "services" {
-  for_each = local.services
+  for_each     = local.services
   force_delete = true
 
   name                 = "${var.project_name}-${var.environment}-${each.key}"
@@ -451,9 +445,9 @@ resource "aws_ecr_lifecycle_policy" "services" {
         rulePriority = 1
         description  = "Keep last 5 images"
         selection = {
-          tagStatus     = "any"
-          countType     = "imageCountMoreThan"
-          countNumber   = 5
+          tagStatus   = "any"
+          countType   = "imageCountMoreThan"
+          countNumber = 5
         }
         action = {
           type = "expire"
@@ -512,10 +506,12 @@ module "ecs_service_user" {
   target_group_arn     = module.alb.target_group_arns["user-service"]
 
   # Service Discovery
-  enable_service_discovery       = true
-  service_discovery_service_arn  = module.service_discovery.service_discovery_services["user-service"]
+  enable_service_discovery      = true
+  service_discovery_service_arn = module.service_discovery.service_discovery_services["user-service"]
 
   tags = var.tags
+
+  depends_on = [module.alb]
 }
 
 # -----------------------------------------------------------------------------
@@ -567,6 +563,8 @@ module "ecs_service_question" {
   service_discovery_service_arn = module.service_discovery.service_discovery_services["question-service"]
 
   tags = var.tags
+
+  depends_on = [module.alb]
 }
 
 # -----------------------------------------------------------------------------
@@ -618,6 +616,8 @@ module "ecs_service_matching" {
   service_discovery_service_arn = module.service_discovery.service_discovery_services["matching-service"]
 
   tags = var.tags
+
+  depends_on = [module.alb]
 }
 
 # -----------------------------------------------------------------------------
@@ -669,6 +669,8 @@ module "ecs_service_session" {
   service_discovery_service_arn = module.service_discovery.service_discovery_services["session-service"]
 
   tags = var.tags
+
+  depends_on = [module.alb]
 }
 
 # -----------------------------------------------------------------------------
@@ -720,6 +722,8 @@ module "ecs_service_collaboration" {
   service_discovery_service_arn = module.service_discovery.service_discovery_services["collaboration-service"]
 
   tags = var.tags
+
+  depends_on = [module.alb]
 }
 
 # -----------------------------------------------------------------------------
@@ -771,6 +775,8 @@ module "ecs_service_chat" {
   service_discovery_service_arn = module.service_discovery.service_discovery_services["chat-service"]
 
   tags = var.tags
+
+  depends_on = [module.alb]
 }
 
 # -----------------------------------------------------------------------------
@@ -822,6 +828,8 @@ module "ecs_service_execution" {
   service_discovery_service_arn = module.service_discovery.service_discovery_services["execution-service"]
 
   tags = var.tags
+
+  depends_on = [module.alb]
 }
 
 # -----------------------------------------------------------------------------
@@ -872,6 +880,8 @@ module "ecs_service_frontend" {
   enable_service_discovery = false
 
   tags = var.tags
+
+  depends_on = [module.alb]
 }
 
 # =============================================================================
@@ -882,60 +892,60 @@ module "ecs_service_frontend" {
 locals {
   autoscaling_services = {
     "user-service" = {
-      service_name      = module.ecs_service_user.service_name
-      min_capacity      = var.ecs_min_capacity
-      max_capacity      = var.ecs_max_capacity
-      cpu_target        = var.autoscaling_cpu_target
-      memory_target     = var.autoscaling_memory_target
+      service_name  = module.ecs_service_user.service_name
+      min_capacity  = var.ecs_min_capacity
+      max_capacity  = var.ecs_max_capacity
+      cpu_target    = var.autoscaling_cpu_target
+      memory_target = var.autoscaling_memory_target
     }
     "question-service" = {
-      service_name      = module.ecs_service_question.service_name
-      min_capacity      = var.ecs_min_capacity
-      max_capacity      = var.ecs_max_capacity
-      cpu_target        = var.autoscaling_cpu_target
-      memory_target     = var.autoscaling_memory_target
+      service_name  = module.ecs_service_question.service_name
+      min_capacity  = var.ecs_min_capacity
+      max_capacity  = var.ecs_max_capacity
+      cpu_target    = var.autoscaling_cpu_target
+      memory_target = var.autoscaling_memory_target
     }
     "matching-service" = {
-      service_name      = module.ecs_service_matching.service_name
-      min_capacity      = var.ecs_min_capacity
-      max_capacity      = var.ecs_max_capacity
-      cpu_target        = var.autoscaling_cpu_target
-      memory_target     = var.autoscaling_memory_target
+      service_name  = module.ecs_service_matching.service_name
+      min_capacity  = var.ecs_min_capacity
+      max_capacity  = var.ecs_max_capacity
+      cpu_target    = var.autoscaling_cpu_target
+      memory_target = var.autoscaling_memory_target
     }
     "session-service" = {
-      service_name      = module.ecs_service_session.service_name
-      min_capacity      = var.ecs_min_capacity
-      max_capacity      = var.ecs_max_capacity
-      cpu_target        = var.autoscaling_cpu_target
-      memory_target     = var.autoscaling_memory_target
+      service_name  = module.ecs_service_session.service_name
+      min_capacity  = var.ecs_min_capacity
+      max_capacity  = var.ecs_max_capacity
+      cpu_target    = var.autoscaling_cpu_target
+      memory_target = var.autoscaling_memory_target
     }
     "execution-service" = {
-      service_name      = module.ecs_service_execution.service_name
-      min_capacity      = var.ecs_min_capacity
-      max_capacity      = var.ecs_max_capacity
-      cpu_target        = var.autoscaling_cpu_target
-      memory_target     = var.autoscaling_memory_target
+      service_name  = module.ecs_service_execution.service_name
+      min_capacity  = var.ecs_min_capacity
+      max_capacity  = var.ecs_max_capacity
+      cpu_target    = var.autoscaling_cpu_target
+      memory_target = var.autoscaling_memory_target
     }
     "collaboration-service" = {
-      service_name      = module.ecs_service_collaboration.service_name
-      min_capacity      = var.ecs_min_capacity
-      max_capacity      = var.ecs_max_capacity
-      cpu_target        = var.autoscaling_cpu_target
-      memory_target     = var.autoscaling_memory_target
+      service_name  = module.ecs_service_collaboration.service_name
+      min_capacity  = var.ecs_min_capacity
+      max_capacity  = var.ecs_max_capacity
+      cpu_target    = var.autoscaling_cpu_target
+      memory_target = var.autoscaling_memory_target
     }
     "chat-service" = {
-      service_name      = module.ecs_service_chat.service_name
-      min_capacity      = var.ecs_min_capacity
-      max_capacity      = var.ecs_max_capacity
-      cpu_target        = var.autoscaling_cpu_target
-      memory_target     = var.autoscaling_memory_target
+      service_name  = module.ecs_service_chat.service_name
+      min_capacity  = var.ecs_min_capacity
+      max_capacity  = var.ecs_max_capacity
+      cpu_target    = var.autoscaling_cpu_target
+      memory_target = var.autoscaling_memory_target
     }
     "frontend" = {
-      service_name      = module.ecs_service_frontend.service_name
-      min_capacity      = var.ecs_min_capacity
-      max_capacity      = var.ecs_max_capacity
-      cpu_target        = var.autoscaling_cpu_target
-      memory_target     = var.autoscaling_memory_target
+      service_name  = module.ecs_service_frontend.service_name
+      min_capacity  = var.ecs_min_capacity
+      max_capacity  = var.ecs_max_capacity
+      cpu_target    = var.autoscaling_cpu_target
+      memory_target = var.autoscaling_memory_target
     }
   }
 }
@@ -971,8 +981,8 @@ resource "aws_appautoscaling_policy" "ecs_cpu_policy" {
     }
 
     target_value       = each.value.cpu_target
-    scale_in_cooldown  = 300  # 5 minutes
-    scale_out_cooldown = 60   # 1 minute
+    scale_in_cooldown  = 300 # 5 minutes
+    scale_out_cooldown = 60  # 1 minute
   }
 }
 
@@ -994,8 +1004,8 @@ resource "aws_appautoscaling_policy" "ecs_memory_policy" {
     }
 
     target_value       = each.value.memory_target
-    scale_in_cooldown  = 300  # 5 minutes
-    scale_out_cooldown = 60   # 1 minute
+    scale_in_cooldown  = 300 # 5 minutes
+    scale_out_cooldown = 60  # 1 minute
   }
 }
 
@@ -1018,8 +1028,8 @@ resource "aws_appautoscaling_policy" "ecs_requests_policy" {
     }
 
     target_value       = var.autoscaling_requests_target
-    scale_in_cooldown  = 300  # 5 minutes
-    scale_out_cooldown = 60   # 1 minute
+    scale_in_cooldown  = 300 # 5 minutes
+    scale_out_cooldown = 60  # 1 minute
   }
 }
 
@@ -1051,7 +1061,7 @@ module "ecs_service_kafka" {
   container_port   = 29092
   container_cpu    = var.kafka_cpu
   container_memory = var.kafka_memory
-  desired_count    = 1  # Single broker for now
+  desired_count    = 1 # Single broker for now
 
   # Environment Variables - Fetched from AWS Secrets Manager
   environment_variables = {
@@ -1183,7 +1193,7 @@ resource "aws_ecs_service" "session_consumer_question_chosen" {
   name            = "session-consumer-question-chosen"
   cluster         = module.ecs_cluster.cluster_id
   task_definition = aws_ecs_task_definition.session_consumer_question_chosen.arn
-  desired_count   = 1  # Only 1 consumer needed per topic
+  desired_count   = 1 # Only 1 consumer needed per topic
   launch_type     = "FARGATE"
 
   network_configuration {
@@ -1362,8 +1372,8 @@ resource "aws_ecs_service" "matching_consumer_session_created" {
 resource "aws_secretsmanager_secret" "ecs_env" {
   name        = "${var.project_name}/${var.environment}/env"
   description = "Environment variables for ${var.project_name} ${var.environment} ECS services"
-  
-  recovery_window_in_days = 7  # Allow 7 days to recover if accidentally deleted
+
+  recovery_window_in_days = 7 # Allow 7 days to recover if accidentally deleted
 
   tags = merge(
     var.tags,
@@ -1375,13 +1385,13 @@ resource "aws_secretsmanager_secret" "ecs_env" {
 
 # Placeholder secret version - will be updated by upload script
 resource "aws_secretsmanager_secret_version" "ecs_env" {
-  secret_id     = aws_secretsmanager_secret.ecs_env.id
+  secret_id = aws_secretsmanager_secret.ecs_env.id
   secret_string = jsonencode({
     PLACEHOLDER = "Run scripts/upload-secrets-to-aws.sh to populate this secret"
   })
 
   lifecycle {
-    ignore_changes = [secret_string]  # Ignore changes made by upload script
+    ignore_changes = [secret_string] # Ignore changes made by upload script
   }
 }
 

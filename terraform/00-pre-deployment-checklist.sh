@@ -225,8 +225,8 @@ if [ $FAILED -eq 0 ]; then
     echo ""
     echo "Next steps:"
     echo "  1. Review terraform.tfvars one more time"
-    echo "  2. Run: ./01-build-and-push-images.sh"
-    echo "  3. Run: ./02-deploy-infrastructure.sh"
+    echo "  2. Run: ./01-terraform-init-plan-create-env.sh"
+    echo "  3. Run: ./03-build-and-push-images.sh"
     echo ""
     exit 0
 else

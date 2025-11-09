@@ -27,10 +27,13 @@ SERVICES=(
     "user-service"
     "question-service"
     "matching-service"
-    "history-service"
+    "session-service"
+    "execution-service"
     "collaboration-service"
     "chat-service"
     "frontend"
+    "kafka"
+    "schema-registry"
 )
 
 echo -e "${BLUE}Forcing service updates to pull latest images...${NC}"
