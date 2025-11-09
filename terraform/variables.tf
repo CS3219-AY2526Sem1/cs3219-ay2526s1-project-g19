@@ -95,19 +95,19 @@ variable "db_backup_retention_period" {
 variable "db_deletion_protection" {
   description = "Enable deletion protection"
   type        = bool
-  default     = false  # Set to true in production
+  default     = false # Set to true in production
 }
 
 variable "db_skip_final_snapshot" {
   description = "Skip final snapshot when destroying (set to false in production)"
   type        = bool
-  default     = true  # Set to false in production to keep final snapshot
+  default     = true # Set to false in production to keep final snapshot
 }
 
 variable "db_engine_version" {
   description = "PostgreSQL engine version"
   type        = string
-  default     = "15.4"
+  default     = "15.14"
 }
 
 variable "db_name" {
@@ -169,7 +169,7 @@ variable "redis_snapshot_retention_limit" {
 variable "alb_enable_deletion_protection" {
   description = "Enable deletion protection for ALB"
   type        = bool
-  default     = false  # Set to true in production
+  default     = false # Set to true in production
 }
 
 variable "alb_access_logs_bucket" {
@@ -459,7 +459,7 @@ variable "ecs_log_retention_days" {
 variable "kafka_cpu" {
   description = "CPU units for Kafka broker"
   type        = number
-  default     = 1024  # Kafka needs more resources
+  default     = 1024 # Kafka needs more resources
 }
 
 variable "kafka_memory" {
@@ -520,5 +520,5 @@ variable "judge0_api_key" {
   description = "Judge0 API key for code execution"
   type        = string
   sensitive   = true
-  default     = ""  # Should be provided via tfvars or secrets
+  default     = "" # Should be provided via tfvars or secrets
 }

@@ -145,7 +145,7 @@ resource "aws_vpc_security_group_egress_rule" "ecs_all" {
 # RDS PostgreSQL Security Groups (4 databases)
 # =============================================================================
 locals {
-  db_names = ["user", "question", "matching", "session"]  # Replaced history with session
+  db_names = ["user", "question", "matching", "session"] # Replaced history with session
 }
 
 resource "aws_security_group" "db" {
@@ -188,11 +188,11 @@ resource "aws_vpc_security_group_ingress_rule" "db_from_local_ip" {
   security_group_id = aws_security_group.db[each.key].id
   description       = "Allow PostgreSQL from Local IP for Migrations"
 
-  from_port         = 5432
-  to_port           = 5432
-  ip_protocol       = "tcp"
+  from_port   = 5432
+  to_port     = 5432
+  ip_protocol = "tcp"
   # 🛑 ACTION: Use the IP you just found, 137.132.26.199
-  cidr_ipv4         = "137.132.26.199/32" 
+  cidr_ipv4 = "137.132.26.199/32"
 
   tags = {
     Name = "${each.key}-db-from-local-ip"

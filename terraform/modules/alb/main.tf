@@ -12,60 +12,60 @@ locals {
   # Service configuration matching nginx.conf routing
   services = {
     frontend = {
-      port        = 80
-      protocol    = "HTTP"
-      health_path = "/health"
+      port         = 80
+      protocol     = "HTTP"
+      health_path  = "/health"
       path_pattern = "/"
-      priority    = 100  # Lowest priority (catch-all)
+      priority     = 100 # Lowest priority (catch-all)
     }
     user-service = {
-      port        = 8000
-      protocol    = "HTTP"
-      health_path = "/health"  # Django admin exists by default
+      port         = 8000
+      protocol     = "HTTP"
+      health_path  = "/health" # Django admin exists by default
       path_pattern = "/user-service-api/*"
-      priority    = 10
+      priority     = 10
     }
     question-service = {
-      port        = 8000
-      protocol    = "HTTP"
-      health_path = "/health"  # Django admin exists by default
+      port         = 8000
+      protocol     = "HTTP"
+      health_path  = "/health" # Django admin exists by default
       path_pattern = "/question-service-api/*"
-      priority    = 20
+      priority     = 20
     }
     matching-service = {
-      port        = 8000
-      protocol    = "HTTP"
-      health_path = "/health"  # FastAPI health endpoint
+      port         = 8000
+      protocol     = "HTTP"
+      health_path  = "/health" # FastAPI health endpoint
       path_pattern = "/matching-service-api/*"
-      priority    = 30
+      priority     = 30
     }
     session-service = {
-      port        = 8000
-      protocol    = "HTTP"
-      health_path = "/health"  # Django admin exists by default
+      port         = 8000
+      protocol     = "HTTP"
+      health_path  = "/health" # Django admin exists by default
       path_pattern = "/session-service-api/*"
-      priority    = 40  # Replaces history-service priority
+      priority     = 40 # Replaces history-service priority
     }
     execution-service = {
-      port        = 8000
-      protocol    = "HTTP"
-      health_path = "/health"  # Django service
+      port         = 8000
+      protocol     = "HTTP"
+      health_path  = "/health" # Django service
       path_pattern = "/execution-service-api/*"
-      priority    = 45
+      priority     = 45
     }
     collaboration-service = {
-      port        = 8000
-      protocol    = "HTTP"
-      health_path = "/health"  # FastAPI health endpoint
+      port         = 8000
+      protocol     = "HTTP"
+      health_path  = "/health" # FastAPI health endpoint
       path_pattern = "/collaboration-service-api/*"
-      priority    = 50
+      priority     = 50
     }
     chat-service = {
-      port        = 8000
-      protocol    = "HTTP"
-      health_path = "/health"  # FastAPI health endpoint
+      port         = 8000
+      protocol     = "HTTP"
+      health_path  = "/health" # FastAPI health endpoint
       path_pattern = "/chat-service-api/*"
-      priority    = 60
+      priority     = 60
     }
   }
 }
@@ -113,7 +113,7 @@ resource "aws_lb" "main" {
 resource "aws_lb_target_group" "services" {
   for_each = local.services
 
-  name_prefix = substr("${var.project_name}-${each.key}-", 0, 6)  # Max 6 chars for prefix
+  name_prefix = substr("${var.project_name}-${each.key}-", 0, 6) # Max 6 chars for prefix
   port        = each.value.port
   protocol    = each.value.protocol
   vpc_id      = var.vpc_id
@@ -133,7 +133,7 @@ resource "aws_lb_target_group" "services" {
     interval            = 30
     path                = each.value.health_path
     protocol            = each.value.protocol
-    matcher             = "200,301,302"  # Accept 200 OK and redirects
+    matcher             = "200,301,302" # Accept 200 OK and redirects
   }
 
   # Stickiness for WebSocket services (collaboration and chat)
@@ -141,7 +141,7 @@ resource "aws_lb_target_group" "services" {
     for_each = contains(["collaboration-service", "chat-service"], each.key) ? [1] : []
     content {
       type            = "lb_cookie"
-      cookie_duration = 86400  # 24 hours
+      cookie_duration = 86400 # 24 hours
       enabled         = true
     }
   }
@@ -425,7 +425,7 @@ resource "aws_cloudwatch_metric_alarm" "alb_target_response_time" {
   namespace           = "AWS/ApplicationELB"
   period              = 300
   statistic           = "Average"
-  threshold           = 1  # 1 second
+  threshold           = 1 # 1 second
   alarm_description   = "Alert when ${each.key} response time is high"
   alarm_actions       = var.alarm_actions
 

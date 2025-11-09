@@ -75,7 +75,7 @@ resource "aws_ecs_service" "main" {
   cluster         = var.cluster_id
   task_definition = aws_ecs_task_definition.main.arn
   desired_count   = var.desired_count
-  
+
   # Only use launch_type when not using capacity providers
   launch_type = var.use_capacity_providers ? null : "FARGATE"
 
@@ -137,7 +137,7 @@ resource "aws_ecs_service" "main" {
   capacity_provider_strategy {
     capacity_provider = "FARGATE"
     weight            = 1
-    base              = 1  # At least 1 task on On-Demand
+    base              = 1 # At least 1 task on On-Demand
   }
 
   # Deployment circuit breaker

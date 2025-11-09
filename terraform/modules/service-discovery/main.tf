@@ -29,7 +29,7 @@ locals {
     "user-service",
     "question-service",
     "matching-service",
-    "session-service",     # Replaces history-service
+    "session-service", # Replaces history-service
     "execution-service",
     "collaboration-service",
     "chat-service",

@@ -225,48 +225,48 @@ output "ecr_repository_urls" {
 output "ecs_service_names" {
   description = "Names of all ECS services"
   value = {
-    user             = module.ecs_service_user.service_name
-    question         = module.ecs_service_question.service_name
-    matching         = module.ecs_service_matching.service_name
-    session          = module.ecs_service_session.service_name
-    execution        = module.ecs_service_execution.service_name
-    collaboration    = module.ecs_service_collaboration.service_name
-    chat             = module.ecs_service_chat.service_name
-    frontend         = module.ecs_service_frontend.service_name
-    kafka            = module.ecs_service_kafka.service_name
-    schema_registry  = module.ecs_service_schema_registry.service_name
+    user            = module.ecs_service_user.service_name
+    question        = module.ecs_service_question.service_name
+    matching        = module.ecs_service_matching.service_name
+    session         = module.ecs_service_session.service_name
+    execution       = module.ecs_service_execution.service_name
+    collaboration   = module.ecs_service_collaboration.service_name
+    chat            = module.ecs_service_chat.service_name
+    frontend        = module.ecs_service_frontend.service_name
+    kafka           = module.ecs_service_kafka.service_name
+    schema_registry = module.ecs_service_schema_registry.service_name
   }
 }
 
 output "ecs_service_arns" {
   description = "ARNs of all ECS services"
   value = {
-    user             = module.ecs_service_user.service_arn
-    question         = module.ecs_service_question.service_arn
-    matching         = module.ecs_service_matching.service_arn
-    session          = module.ecs_service_session.service_arn
-    execution        = module.ecs_service_execution.service_arn
-    collaboration    = module.ecs_service_collaboration.service_arn
-    chat             = module.ecs_service_chat.service_arn
-    frontend         = module.ecs_service_frontend.service_arn
-    kafka            = module.ecs_service_kafka.service_arn
-    schema_registry  = module.ecs_service_schema_registry.service_arn
+    user            = module.ecs_service_user.service_arn
+    question        = module.ecs_service_question.service_arn
+    matching        = module.ecs_service_matching.service_arn
+    session         = module.ecs_service_session.service_arn
+    execution       = module.ecs_service_execution.service_arn
+    collaboration   = module.ecs_service_collaboration.service_arn
+    chat            = module.ecs_service_chat.service_arn
+    frontend        = module.ecs_service_frontend.service_arn
+    kafka           = module.ecs_service_kafka.service_arn
+    schema_registry = module.ecs_service_schema_registry.service_arn
   }
 }
 
 output "ecs_task_definition_arns" {
   description = "ARNs of all ECS task definitions"
   value = {
-    user             = module.ecs_service_user.task_definition_arn
-    question         = module.ecs_service_question.task_definition_arn
-    matching         = module.ecs_service_matching.task_definition_arn
-    session          = module.ecs_service_session.task_definition_arn
-    execution        = module.ecs_service_execution.task_definition_arn
-    collaboration    = module.ecs_service_collaboration.task_definition_arn
-    chat             = module.ecs_service_chat.task_definition_arn
-    frontend         = module.ecs_service_frontend.task_definition_arn
-    kafka            = module.ecs_service_kafka.task_definition_arn
-    schema_registry  = module.ecs_service_schema_registry.task_definition_arn
+    user            = module.ecs_service_user.task_definition_arn
+    question        = module.ecs_service_question.task_definition_arn
+    matching        = module.ecs_service_matching.task_definition_arn
+    session         = module.ecs_service_session.task_definition_arn
+    execution       = module.ecs_service_execution.task_definition_arn
+    collaboration   = module.ecs_service_collaboration.task_definition_arn
+    chat            = module.ecs_service_chat.task_definition_arn
+    frontend        = module.ecs_service_frontend.task_definition_arn
+    kafka           = module.ecs_service_kafka.task_definition_arn
+    schema_registry = module.ecs_service_schema_registry.task_definition_arn
   }
 }
 
@@ -293,18 +293,18 @@ output "deployment_summary" {
     }
 
     # Infrastructure
-    vpc_id               = module.vpc.vpc_id
-    ecs_cluster_name     = module.ecs_cluster.cluster_name
-    service_discovery    = module.service_discovery.namespace_name
+    vpc_id            = module.vpc.vpc_id
+    ecs_cluster_name  = module.ecs_cluster.cluster_name
+    service_discovery = module.service_discovery.namespace_name
 
     # Resources Created
     resources = {
-      rds_instances       = 4
-      redis_clusters      = 3
-      ecs_services        = 10
-      ecr_repositories    = 10
-      availability_zones  = 2
-      nat_gateways        = 1
+      rds_instances      = 4
+      redis_clusters     = 3
+      ecs_services       = 10
+      ecr_repositories   = 10
+      availability_zones = 2
+      nat_gateways       = 1
     }
 
     # Next Steps
@@ -322,10 +322,10 @@ output "ecr_push_commands" {
   description = "Commands to push Docker images to ECR"
   value = {
     for name, repo in aws_ecr_repository.services : name => {
-      login   = "aws ecr get-login-password --region ${var.aws_region} | docker login --username AWS --password-stdin ${split("/", repo.repository_url)[0]}"
-      build   = "docker build -t ${name} ./<path-to-${name}>"
-      tag     = "docker tag ${name}:latest ${repo.repository_url}:latest"
-      push    = "docker push ${repo.repository_url}:latest"
+      login = "aws ecr get-login-password --region ${var.aws_region} | docker login --username AWS --password-stdin ${split("/", repo.repository_url)[0]}"
+      build = "docker build -t ${name} ./<path-to-${name}>"
+      tag   = "docker tag ${name}:latest ${repo.repository_url}:latest"
+      push  = "docker push ${repo.repository_url}:latest"
     }
   }
 }
