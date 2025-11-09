@@ -66,7 +66,9 @@ export const setupInterceptors = (client: AxiosInstance) => {
         if (!refreshToken) {
           // No refresh token, redirect to login
           localStorage.clear();
-          window.location.href = '/login';
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
           return Promise.reject(error);
         }
 
@@ -95,7 +97,9 @@ export const setupInterceptors = (client: AxiosInstance) => {
           // Refresh failed, clear tokens and redirect to login
           processQueue(refreshError as Error, null);
           localStorage.clear();
-          window.location.href = '/login';
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
           return Promise.reject(refreshError);
         } finally {
           isRefreshing = false;

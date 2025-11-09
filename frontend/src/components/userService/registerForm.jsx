@@ -290,7 +290,7 @@ const RegisterForm = () => {
                     {/* Password Field */}
                     <div className="flex flex-col gap-1">
                         <label className="font-ubuntu text-sm font-medium">Password</label>
-                        <div className={`flex items-center w-full border ${getBorderColor("password")} p-2 rounded-lg focus-within:ring-2 focus-within:ring-indigo-200 focus-within:border-indigo-500 transition duration-150 h-10`}>
+                        <div className={`flex items-center w-full border ${getBorderColor("password")} p-2 rounded-lg focus-within:ring-2 focus-within:ring-primary focus-within:border-secondary transition duration-150 h-10`}>
                             <input 
                                 type={showPassword ? "text" : "password"} 
                                 name="password"
@@ -340,7 +340,7 @@ const RegisterForm = () => {
                     {/* Registration Error Message */}
                     {registerError && (
                         <div className="text-red-500 text-sm text-center p-2 bg-red-50 rounded">
-                            <MessageSquareWarning className="inline w-4 h-4 mr-1"/>
+                            <MessageSquareWarning className="inline w-4 h-4 mr-1 text-red-400"/>
                             {registerError}
                         </div>
                     )}

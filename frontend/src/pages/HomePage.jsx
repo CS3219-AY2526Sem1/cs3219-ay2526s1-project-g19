@@ -20,7 +20,7 @@ const HomePage = () => {
       }
 
       try {
-        const sessionData = await sessionService.getActiveSession(user.id);
+        const sessionData = await sessionService.getActiveSession();
         
         if (sessionData && sessionData.id && !sessionData.ended_at) {
           let enrichedSession = {
@@ -86,7 +86,7 @@ const HomePage = () => {
   };
 
   return (
-    <div className="w-full min-h-screen p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-950 dark:via-slate-900 dark:to-indigo-950">
+    <div className="w-full min-h-screen p-8 bg-background">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-4 text-white">Welcome to PeerPrep!</h1>

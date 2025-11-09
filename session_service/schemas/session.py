@@ -10,3 +10,11 @@ class ActiveSessionSchema(BaseModel):
     question_id: UUID
     language: str
     matched_user_id: UUID
+
+
+class SessionHistorySchema(ActiveSessionSchema):
+    question_title: str
+    question_statement_md: str
+    topics: list[str]
+    difficulty: str
+    company_tags: list[str]

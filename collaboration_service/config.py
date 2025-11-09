@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     port: int = 8005
     
     # Timeouts and expiry
-    expiry_time: int = 1800
+    expiry_time: int = 3600
     inactive_session_timeout: int = 300
 
     model_config = SettingsConfigDict(env_file=".env", extra='ignore')

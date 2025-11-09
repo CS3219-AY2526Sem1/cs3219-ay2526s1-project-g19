@@ -34,7 +34,7 @@ export const useMatchingSocket = () => {
       }
 
       try {
-        const ws = matchingService.createWebSocket(user.id);
+        const ws = matchingService.createWebSocket();
         wsRef.current = ws;
 
         const timeout = setTimeout(() => {
@@ -100,7 +100,7 @@ export const useMatchingSocket = () => {
     }
 
     // check active sessions
-    const session = await sessionService.getActiveSession(user?.id)
+    const session = await sessionService.getActiveSession()
     console.log(`${session}`)
     if (session) {
       setError('Already in active session, rejoin from home screen');
@@ -144,10 +144,7 @@ export const useMatchingSocket = () => {
 
       // Join queue 
       console.log('Joining queue via API...');
-      await matchingService.addToQueue({
-        user_id: user.id,
-        criteria,
-      });
+      await matchingService.addToQueue(criteria);
       console.log('Successfully joined queue');
       
     } catch (error: any) {
@@ -175,7 +172,7 @@ export const useMatchingSocket = () => {
     if (!user?.id) return;
 
     try {
-      await matchingService.removeFromQueue({ user_id: user.id });
+      await matchingService.removeFromQueue();
       setIsMatching(false);
     } catch (error: any) {
       if (error.response?.status === 404) {

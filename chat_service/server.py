@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 # --- Config / constants ---
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
-EXPIRY_TIME = 1800  # 30 minutes - matching collaboration service
+EXPIRY_TIME = 3600
 SERVICE_PREFIX = os.getenv("SERVICE_PREFIX", "/chat-service-api")
 if SERVICE_PREFIX and not SERVICE_PREFIX.startswith("/"):
     SERVICE_PREFIX = "/" + SERVICE_PREFIX

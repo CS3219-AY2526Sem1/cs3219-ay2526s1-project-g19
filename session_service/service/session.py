@@ -1,16 +1,17 @@
 from datetime import datetime
 import logging
 from uuid import UUID
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from config import settings
 from kafka.kafka_client import kafka_client
 from pg_db.core import engine
 from crud.session import session_repo, session_user_repo
-from models.session import Session, SessionUser
+from models.session import Session, SessionMetadata, SessionUser
 from schemas.events import SessionCreated, SessionEnd
 from confluent_kafka.schema_registry.avro import AvroSerializer
 
-from schemas.session import ActiveSessionSchema
+from schemas.session import ActiveSessionSchema, SessionHistorySchema
 
 
 logger = logging.getLogger(__name__)
@@ -46,7 +47,15 @@ class SessionService:
                         user_id=user_id
                     )
                     for user_id in session_created.user_id_list
-                ]
+                ],
+                session_metadata=SessionMetadata(
+                    session_id=session_id,
+                    question_title=session_created.title,
+                    question_statement_md=session_created.statement_md,
+                    topics=session_created.topics,
+                    difficulty=session_created.difficulty,
+                    company_tags=session_created.company_tags
+                )
             )
             logger.info(f"Creating new session {session_created.session_id}")
             await session_repo.insert(
@@ -89,8 +98,7 @@ class SessionService:
 
     async def end_session(
         self,
-        session_id: UUID,
-        db_session: AsyncSession
+        session_id: UUID
     ) -> None:
         # publish session end event to kafka
         with open("kafka/schemas/session_end.avsc") as f:
@@ -111,6 +119,43 @@ class SessionService:
             serializer=serializer
         )
         return
+
+    async def get_history(
+        self,
+        user_id: UUID,
+        db_session: AsyncSession,
+        size: int = 10,
+        page: int = 1
+    ) -> list[SessionHistorySchema]:
+        if page < 1:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail=f"Page must be 1 or larger, page received: {page}"
+            )
+        if size < 0:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail=f"Size must be 0 or larger, size received: {size}"
+            )
+        session_user_list = await session_repo.get_by_user_id(
+            user_id=user_id,
+            size=size,
+            page=page,
+            db_session=db_session
+        )
+        res = []
+        for session, matched_user_id in session_user_list:
+            metadata = session.session_metadata
+            if not metadata:
+                metadata = SessionMetadata(
+                    session_id=session.id
+                )
+            res.append(SessionHistorySchema(
+                **session.model_dump(),
+                matched_user_id=matched_user_id,
+                **metadata.model_dump()
+            ))
+        return res
 
 
 session_service = SessionService()

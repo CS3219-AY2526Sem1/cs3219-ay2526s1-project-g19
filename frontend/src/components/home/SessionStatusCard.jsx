@@ -24,7 +24,7 @@ const SessionStatusCard = ({ isChecking, activeSession, onReconnect, onStartNew 
 
   if (activeSession) {
     return (
-      <div className="bg-gradient-to-r from-blue-900/50 to-indigo-900/50 border-2 border-blue-500 rounded-lg p-6 shadow-xl">
+      <div className="bg-background-secondary border-2 border-blue-500 rounded-lg p-6 shadow-xl">
         <div className="flex items-center gap-2 mb-4">
           <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
           <h2 className="text-xl font-bold text-white">Active Session Found</h2>
@@ -47,7 +47,7 @@ const SessionStatusCard = ({ isChecking, activeSession, onReconnect, onStartNew 
 
         <button
           onClick={onReconnect}
-          className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors shadow-lg"
+          className="w-full flex items-center justify-center gap-2 px-6 py-3 font-semibold rounded-lg transition-colors shadow-lg"
         >
           <RefreshCw className="w-5 h-5" />
           Reconnect to Session
@@ -62,7 +62,7 @@ const SessionStatusCard = ({ isChecking, activeSession, onReconnect, onStartNew 
       
       <button
         onClick={onStartNew}
-        className="w-full flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-bold text-lg rounded-lg transition-all shadow-xl"
+        className="w-full flex items-center justify-center gap-2 px-8 py-4 font-bold text-lg rounded-lg transition-all shadow-xl"
       >
         Start New Session
         <ArrowRight className="w-5 h-5" />

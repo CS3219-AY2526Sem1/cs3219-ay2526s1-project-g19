@@ -87,12 +87,5 @@ class MatchingService:
                 criteria.secondary_lang = VALID_LANGUAGE_LIST
         return criteria
 
-    async def debug_show(self) -> dict:
-        return await self.redis_controller.debug_show()
-
-    async def clear_redis(self) -> None:
-        await self.redis_controller.clear_redis()
-        return
-
 
 matching_service = MatchingService()

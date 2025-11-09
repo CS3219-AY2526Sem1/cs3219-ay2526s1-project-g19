@@ -6,11 +6,6 @@ export interface MatchingSelections {
   proficiency: number;
 }
 
-export interface MatchRequest {
-  user_id: string;
-  criteria: MatchingSelections;
-}
-
 export interface MatchResponse {
   status: string;
   queue_id: string;
@@ -43,8 +38,4 @@ export interface WebSocketMessage {
   status: 'success' | 'timeout' | 'relax';
   session: SessionData | null;
   message?: string; // Error messages
-}
-
-export interface DeleteMatchRequest {
-  user_id: string;
 }

@@ -1,6 +1,8 @@
 from datetime import datetime
 from uuid import UUID, uuid4
+from sqlalchemy import Column
 from sqlmodel import Field, Relationship, SQLModel
+from sqlalchemy.dialects.postgresql import JSONB
 
 
 class Session(SQLModel, table=True):
@@ -25,7 +27,23 @@ class SessionUser(SQLModel, table=True):
 
 class SessionMetadata(SQLModel, table=True):
     session_id: UUID = Field(primary_key=True, foreign_key="session.id", ondelete="CASCADE")
-    attempts: int = Field(nullable=False)
+    question_title: str = ""
+    question_statement_md: str = ""
+    topics: list[str] = Field(
+        default_factory=list,
+        sa_column=Column(
+            JSONB,
+            nullable=False,
+        )
+    ) 
+    difficulty: str = ""
+    company_tags: list[str] = Field(
+        default_factory=list,
+        sa_column=Column(
+            JSONB,
+            nullable=False
+        )
+    )
 
     # Relationships
     session: Session = Relationship(back_populates="session_metadata")

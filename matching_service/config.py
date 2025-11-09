@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    env: str = "prd"
+    environment: str = "production"
     redis_host: str = Field(alias="MATCHING_REDIS_HOST")
     redis_port: str = Field(alias="MATCHING_REDIS_PORT")
     user_service_url: str
@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     schema_registry_secret: str
     sasl_username: str
     sasl_password: str
+
+    # jwt decryption
+    secret_key: str
 
 
 settings = Settings()
