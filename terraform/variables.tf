@@ -197,13 +197,16 @@ variable "service_names" {
   description = "List of microservice names"
   type        = list(string)
   default = [
+    "frontend",
     "user-service",
     "question-service",
     "matching-service",
-    "history-service",
+    "session-service",
+    "execution-service",
     "collaboration-service",
     "chat-service",
-    "frontend"
+    "kafka",
+    "schema-registry"
   ]
 }
 

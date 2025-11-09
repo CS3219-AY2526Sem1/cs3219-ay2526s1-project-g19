@@ -3,7 +3,7 @@
 # =============================================================================
 # Creates:
 # - Application Load Balancer in public subnets
-# - Target groups for all 7 services
+# - Target groups for all HTTP-facing services
 # - HTTP listener with path-based routing
 # - Health checks for each service
 # =============================================================================
@@ -253,26 +253,50 @@ resource "aws_lb_listener_rule" "matching_service" {
   )
 }
 
-# Rule for history-service-api
-resource "aws_lb_listener_rule" "history_service" {
+# Rule for session-service-api
+resource "aws_lb_listener_rule" "session_service" {
   listener_arn = aws_lb_listener.http.arn
-  priority     = local.services["history-service"].priority
+  priority     = local.services["session-service"].priority
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.services["history-service"].arn
+    target_group_arn = aws_lb_target_group.services["session-service"].arn
   }
 
   condition {
     path_pattern {
-      values = [local.services["history-service"].path_pattern]
+      values = [local.services["session-service"].path_pattern]
     }
   }
 
   tags = merge(
     var.tags,
     {
-      Name = "history-service-routing"
+      Name = "session-service-routing"
+    }
+  )
+}
+
+# Rule for execution-service-api
+resource "aws_lb_listener_rule" "execution_service" {
+  listener_arn = aws_lb_listener.http.arn
+  priority     = local.services["execution-service"].priority
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.services["execution-service"].arn
+  }
+
+  condition {
+    path_pattern {
+      values = [local.services["execution-service"].path_pattern]
+    }
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "execution-service-routing"
     }
   )
 }

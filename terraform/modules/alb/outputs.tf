@@ -65,7 +65,8 @@ output "service_urls" {
     user_service          = "http://${aws_lb.main.dns_name}/user-service-api/"
     question_service      = "http://${aws_lb.main.dns_name}/question-service-api/"
     matching_service      = "http://${aws_lb.main.dns_name}/matching-service-api/"
-    history_service       = "http://${aws_lb.main.dns_name}/history-service-api/"
+    session_service       = "http://${aws_lb.main.dns_name}/session-service-api/"
+    execution_service     = "http://${aws_lb.main.dns_name}/execution-service-api/"
     collaboration_service = "http://${aws_lb.main.dns_name}/collaboration-service-api/"
     chat_service          = "http://${aws_lb.main.dns_name}/chat-service-api/"
   }
