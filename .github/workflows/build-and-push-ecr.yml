@@ -1,0 +1,197 @@
+name: Build and Push to ECR
+
+on:
+  push:
+    branches:
+      - master  # Deploy on push to master
+      - prod/ecs-prod  # Deploy on push to ECS production branch
+  workflow_dispatch:  # Allow manual trigger from GitHub UI
+    inputs:
+      tag:
+        description: 'Image tag (default: commit SHA)'
+        required: false
+        default: ''
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REGISTRY_PREFIX: peerprep-production
+
+jobs:
+  build-and-push:
+    name: Build and Push Docker Images
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - name: user-service
+            context: ./user_service
+            dockerfile: ./user_service/Dockerfile
+          - name: question-service
+            context: ./question_service
+            dockerfile: ./question_service/Dockerfile
+          - name: matching-service
+            context: ./matching_service
+            dockerfile: ./matching_service/Dockerfile
+          - name: session-service
+            context: ./session_service
+            dockerfile: ./session_service/Dockerfile
+          - name: execution-service
+            context: ./execution_service
+            dockerfile: ./execution_service/Dockerfile
+          - name: collaboration-service
+            context: ./collaboration_service
+            dockerfile: ./collaboration_service/Dockerfile
+          - name: chat-service
+            context: ./chat_service
+            dockerfile: ./chat_service/Dockerfile
+          - name: frontend
+            context: ./frontend
+            dockerfile: ./frontend/Dockerfile
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set image tag
+        id: tag
+        run: |
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ github.sha }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build, tag, and push image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ env.ECR_REGISTRY_PREFIX }}-${{ matrix.service.name }}
+          IMAGE_TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          echo "Building ${{ matrix.service.name }}..."
+
+          # Build Docker image
+          docker build \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            -f ${{ matrix.service.dockerfile }} \
+            ${{ matrix.service.context }}
+
+          # Push both tags
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+          echo "✓ Pushed ${{ matrix.service.name }}:$IMAGE_TAG"
+          echo "✓ Pushed ${{ matrix.service.name }}:latest"
+
+      - name: Run Trivy security scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REGISTRY_PREFIX }}-${{ matrix.service.name }}:${{ steps.tag.outputs.tag }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+        continue-on-error: true
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+        continue-on-error: true
+
+  push-kafka-images:
+    name: Push Kafka Infrastructure Images
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: kafka
+            source_image: confluentinc/cp-kafka:8.1.0
+          - name: schema-registry
+            source_image: confluentinc/cp-schema-registry:8.1.0
+
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set image tag
+        id: tag
+        run: |
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ github.sha }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Pull, tag, and push image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ env.ECR_REGISTRY_PREFIX }}-${{ matrix.name }}
+          IMAGE_TAG: ${{ steps.tag.outputs.tag }}
+          SOURCE_IMAGE: ${{ matrix.source_image }}
+        run: |
+          echo "Pulling and pushing ${{ matrix.name }}..."
+
+          # Pull official Confluent image
+          docker pull $SOURCE_IMAGE
+
+          # Tag for ECR
+          docker tag $SOURCE_IMAGE $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker tag $SOURCE_IMAGE $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+          # Push both tags
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+          echo "✓ Pushed ${{ matrix.name }}:$IMAGE_TAG"
+          echo "✓ Pushed ${{ matrix.name }}:latest"
+
+  summary:
+    name: Build Summary
+    runs-on: ubuntu-latest
+    needs: [build-and-push, push-kafka-images]
+    if: always()
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "### Build and Push Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image Tag**: \`${{ github.event.inputs.tag || github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "#### Services Built:" >> $GITHUB_STEP_SUMMARY
+          echo "- user-service" >> $GITHUB_STEP_SUMMARY
+          echo "- question-service" >> $GITHUB_STEP_SUMMARY
+          echo "- matching-service" >> $GITHUB_STEP_SUMMARY
+          echo "- session-service" >> $GITHUB_STEP_SUMMARY
+          echo "- execution-service" >> $GITHUB_STEP_SUMMARY
+          echo "- collaboration-service" >> $GITHUB_STEP_SUMMARY
+          echo "- chat-service" >> $GITHUB_STEP_SUMMARY
+          echo "- frontend" >> $GITHUB_STEP_SUMMARY
+          echo "- kafka" >> $GITHUB_STEP_SUMMARY
+          echo "- schema-registry" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Next: Deploy via Terraform workflow" >> $GITHUB_STEP_SUMMARY
