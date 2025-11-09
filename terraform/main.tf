@@ -493,26 +493,10 @@ module "ecs_service_user" {
   container_memory = var.user_service_memory
   desired_count    = var.user_service_desired_count
 
-  # Environment Variables
+  # Environment Variables - Fetched from AWS Secrets Manager
   environment_variables = {
-    DEBUG        = "false"
-    SECRET_KEY   = var.secret_key
-    ALLOWED_HOSTS = "*"  # Allow all hosts since service is behind ALB in private VPC
-
-    # Database Connection
-    DATABASE_URL = "postgresql://${var.db_username}:${var.db_password}@${module.rds_user.db_endpoint}/user_db"
-    DB_HOST      = module.rds_user.db_host
-    DB_PORT      = "5432"
-    DB_NAME      = "user_db"
-    DB_USER      = var.db_username
-    DB_PASSWORD  = var.db_password
-
-    # Service-to-Service URLs
-    QUESTION_SERVICE_URL      = "http://question-service.${module.service_discovery.namespace_name}:8000"
-    MATCHING_SERVICE_URL      = "http://matching-service.${module.service_discovery.namespace_name}:8000"
-    HISTORY_SERVICE_URL       = "http://history-service.${module.service_discovery.namespace_name}:8000"
-    COLLABORATION_SERVICE_URL = "http://collaboration-service.${module.service_discovery.namespace_name}:8000"
-    CHAT_SERVICE_URL          = "http://chat-service.${module.service_discovery.namespace_name}:8000"
+    AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
+    AWS_REGION      = var.aws_region
   }
 
   # IAM Roles
@@ -560,25 +544,10 @@ module "ecs_service_question" {
   container_memory = var.question_service_memory
   desired_count    = var.question_service_desired_count
 
-  # Environment Variables
+  # Environment Variables - Fetched from AWS Secrets Manager
   environment_variables = {
-    DEBUG             = "false"
-    SECRET_KEY        = var.secret_key
-    ALLOWED_HOSTS     = "*"  # Allow all hosts since service is behind ALB in private VPC
-    DJANGO_USE_SQLITE = "0"
-
-    # Database Connection
-    DATABASE_URL = "postgresql://${var.db_username}:${var.db_password}@${module.rds_question.db_endpoint}/question_db"
-    DB_HOST      = module.rds_question.db_host
-    DB_PORT      = "5432"
-    DB_NAME      = "question_db"
-    DB_USER      = var.db_username
-    DB_PASSWORD  = var.db_password
-
-    # Service-to-Service URLs
-    USER_SERVICE_URL     = "http://user-service.${module.service_discovery.namespace_name}:8000"
-    MATCHING_SERVICE_URL = "http://matching-service.${module.service_discovery.namespace_name}:8000"
-    HISTORY_SERVICE_URL  = "http://history-service.${module.service_discovery.namespace_name}:8000"
+    AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
+    AWS_REGION      = var.aws_region
   }
 
   # IAM Roles
@@ -626,27 +595,10 @@ module "ecs_service_matching" {
   container_memory = var.matching_service_memory
   desired_count    = var.matching_service_desired_count
 
-  # Environment Variables
+  # Environment Variables - Fetched from AWS Secrets Manager
   environment_variables = {
-    DEBUG         = "false"
-    ALLOWED_HOSTS = "*"  # Allow all hosts since service is behind ALB in private VPC
-
-    # Database Connection
-    DATABASE_URL = "postgresql://${var.db_username}:${var.db_password}@${module.rds_matching.db_endpoint}/matching_db"
-    DB_HOST      = module.rds_matching.db_host
-    DB_PORT      = "5432"
-    DB_NAME      = "matching_db"
-    DB_USER      = var.db_username
-    DB_PASSWORD  = var.db_password
-
-    # Redis Connection
-    REDIS_URL  = "redis://${module.elasticache_matching.redis_endpoint}:6379/0"
-    REDIS_HOST = module.elasticache_matching.redis_endpoint
-    REDIS_PORT = "6379"
-
-    # Service-to-Service URLs
-    USER_SERVICE_URL     = "http://user-service.${module.service_discovery.namespace_name}:8000"
-    QUESTION_SERVICE_URL = "http://question-service.${module.service_discovery.namespace_name}:8000"
+    AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
+    AWS_REGION      = var.aws_region
   }
 
   # IAM Roles
@@ -694,37 +646,10 @@ module "ecs_service_session" {
   container_memory = var.session_service_memory
   desired_count    = var.session_service_desired_count
 
-  # Environment Variables
+  # Environment Variables - Fetched from AWS Secrets Manager
   environment_variables = {
-    DEBUG         = "false"
-    SECRET_KEY    = var.secret_key
-    ALLOWED_HOSTS = "*"  # Allow all hosts since service is behind ALB in private VPC
-
-    # Database Connection
-    DATABASE_URL = "postgresql://${var.db_username}:${var.db_password}@${module.rds_session.db_endpoint}/session_db"
-    DB_HOST      = module.rds_session.db_host
-    DB_PORT      = "5432"
-    DB_NAME      = "session_db"
-    DB_USER      = var.db_username
-    DB_PASSWORD  = var.db_password
-
-    # Kafka Configuration
-    KAFKA_BOOTSTRAP_SERVERS = "kafka.${module.service_discovery.namespace_name}:29092"
-    SCHEMA_REGISTRY_URL     = "http://schema-registry.${module.service_discovery.namespace_name}:8081"
-
-    # Kafka Topics
-    TOPIC_MATCH_FOUND       = var.kafka_topic_match_found
-    TOPIC_QUESTION_CHOSEN   = var.kafka_topic_question_chosen
-    TOPIC_SESSION_CREATED   = var.kafka_topic_session_created
-    TOPIC_SESSION_END       = var.kafka_topic_session_end
-
-    # Kafka Consumer Group
-    SESSION_GROUP_ID        = "session-service-group"
-
-    # Service-to-Service URLs
-    USER_SERVICE_URL          = "http://user-service.${module.service_discovery.namespace_name}:8000"
-    QUESTION_SERVICE_URL      = "http://question-service.${module.service_discovery.namespace_name}:8000"
-    COLLABORATION_SERVICE_URL = "http://collaboration-service.${module.service_discovery.namespace_name}:8000"
+    AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
+    AWS_REGION      = var.aws_region
   }
 
   # IAM Roles
@@ -772,21 +697,10 @@ module "ecs_service_collaboration" {
   container_memory = var.collaboration_service_memory
   desired_count    = var.collaboration_service_desired_count
 
-  # Environment Variables
+  # Environment Variables - Fetched from AWS Secrets Manager
   environment_variables = {
-    DEBUG = "false"
-    PORT  = "8000"
-    SERVICE_PREFIX = "/collaboration-service-api"
-
-    # Redis Connection (for WebSocket session management)
-    REDIS_URL  = "redis://${module.elasticache_collaboration.redis_endpoint}:6379/0"
-    REDIS_HOST = module.elasticache_collaboration.redis_endpoint
-    REDIS_PORT = "6379"
-
-    # Service-to-Service URLs
-    USER_SERVICE_URL     = "http://user-service.${module.service_discovery.namespace_name}:8000"
-    QUESTION_SERVICE_URL = "http://question-service.${module.service_discovery.namespace_name}:8000"
-    CHAT_SERVICE_URL     = "http://chat-service.${module.service_discovery.namespace_name}:8000"
+    AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
+    AWS_REGION      = var.aws_region
   }
 
   # IAM Roles
@@ -834,20 +748,10 @@ module "ecs_service_chat" {
   container_memory = var.chat_service_memory
   desired_count    = var.chat_service_desired_count
 
-  # Environment Variables
+  # Environment Variables - Fetched from AWS Secrets Manager
   environment_variables = {
-    DEBUG = "false"
-    PORT  = "8000"
-    SERVICE_PREFIX = "/chat-service-api"
-
-    # Redis Connection (for WebSocket session management)
-    REDIS_URL  = "redis://${module.elasticache_chat.redis_endpoint}:6379/0"
-    REDIS_HOST = module.elasticache_chat.redis_endpoint
-    REDIS_PORT = "6379"
-
-    # Service-to-Service URLs
-    USER_SERVICE_URL          = "http://user-service.${module.service_discovery.namespace_name}:8000"
-    COLLABORATION_SERVICE_URL = "http://collaboration-service.${module.service_discovery.namespace_name}:8000"
+    AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
+    AWS_REGION      = var.aws_region
   }
 
   # IAM Roles
@@ -895,18 +799,10 @@ module "ecs_service_execution" {
   container_memory = var.execution_service_memory
   desired_count    = var.execution_service_desired_count
 
-  # Environment Variables
+  # Environment Variables - Fetched from AWS Secrets Manager
   environment_variables = {
-    DEBUG         = "false"
-    SECRET_KEY    = var.secret_key
-    ALLOWED_HOSTS = "*"  # Allow all hosts since service is behind ALB in private VPC
-
-    # Judge0 Configuration (External Service)
-    JUDGE0_URL     = var.judge0_url
-    JUDGE0_API_KEY = var.judge0_api_key
-
-    # Service-to-Service URLs
-    QUESTION_SERVICE_URL = "http://question-service.${module.service_discovery.namespace_name}:8000"
+    AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
+    AWS_REGION      = var.aws_region
   }
 
   # IAM Roles
@@ -954,27 +850,10 @@ module "ecs_service_frontend" {
   container_memory = var.frontend_memory
   desired_count    = var.frontend_desired_count
 
-  # Environment Variables
+  # Environment Variables - Fetched from AWS Secrets Manager
   environment_variables = {
-    NODE_ENV = "production"
-
-    # Nginx proxy configuration (service hostnames for proxy_pass)
-    NGINX_USER_SERVICE_HOST          = "user-service.${module.service_discovery.namespace_name}"
-    NGINX_QUESTION_SERVICE_HOST      = "question-service.${module.service_discovery.namespace_name}"
-    NGINX_MATCHING_SERVICE_HOST      = "matching-service.${module.service_discovery.namespace_name}"
-    NGINX_SESSION_SERVICE_HOST       = "session-service.${module.service_discovery.namespace_name}"
-    NGINX_EXECUTION_SERVICE_HOST     = "execution-service.${module.service_discovery.namespace_name}"
-    NGINX_COLLABORATION_SERVICE_HOST = "collaboration-service.${module.service_discovery.namespace_name}"
-    NGINX_CHAT_SERVICE_HOST          = "chat-service.${module.service_discovery.namespace_name}"
-
-    # VITE build-time variables (embedded in JS bundle)
-    VITE_QUESTION_SERVICE_URL      = "/question-service-api"
-    VITE_MATCHING_SERVICE_URL      = "/matching-service-api"
-    VITE_USER_SERVICE_URL          = "/user-service-api"
-    VITE_SESSION_SERVICE_URL       = "/session-service-api"
-    VITE_EXECUTION_SERVICE_URL     = "/execution-service-api"
-    VITE_COLLABORATION_SERVICE_URL = "/collaboration-service-api"
-    VITE_CHAT_SERVICE_URL          = "/chat-service-api"
+    AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
+    AWS_REGION      = var.aws_region
   }
 
   # IAM Roles
@@ -1174,25 +1053,10 @@ module "ecs_service_kafka" {
   container_memory = var.kafka_memory
   desired_count    = 1  # Single broker for now
 
-  # Environment Variables
+  # Environment Variables - Fetched from AWS Secrets Manager
   environment_variables = {
-    # KRaft mode configuration (no Zookeeper)
-    KAFKA_PROCESS_ROLES                 = "broker,controller"
-    KAFKA_NODE_ID                       = "1"
-    KAFKA_CONTROLLER_QUORUM_VOTERS      = "1@kafka.${module.service_discovery.namespace_name}:29093"
-    KAFKA_CONTROLLER_LISTENER_NAMES     = "CONTROLLER"
-    KAFKA_LISTENERS                     = "PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093"
-    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP = "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
-    KAFKA_ADVERTISED_LISTENERS          = "PLAINTEXT://kafka.${module.service_discovery.namespace_name}:29092"
-    KAFKA_INTER_BROKER_LISTENER_NAME    = "PLAINTEXT"
-
-    # Topic configuration
-    KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR = "1"
-    KAFKA_NUM_PARTITIONS                   = "3"
-    KAFKA_LOG_DIRS                        = "/var/lib/kafka/data"
-
-    # Cluster ID (must be consistent)
-    CLUSTER_ID = "Deq3DYCfTWCkO7cIJRLCYQ"
+    AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
+    AWS_REGION      = var.aws_region
   }
 
   # IAM Roles
@@ -1239,11 +1103,10 @@ module "ecs_service_schema_registry" {
   container_memory = var.schema_registry_memory
   desired_count    = 1
 
-  # Environment Variables
+  # Environment Variables - Fetched from AWS Secrets Manager
   environment_variables = {
-    SCHEMA_REGISTRY_HOST_NAME               = "schema-registry"
-    SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS = "PLAINTEXT://kafka.${module.service_discovery.namespace_name}:29092"
-    SCHEMA_REGISTRY_LISTENERS               = "http://0.0.0.0:8081"
+    AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
+    AWS_REGION      = var.aws_region
   }
 
   # IAM Roles
@@ -1291,32 +1154,8 @@ resource "aws_ecs_task_definition" "session_consumer_question_chosen" {
       essential = true
 
       environment = [
-        { name = "DEBUG", value = "false" },
-        { name = "SECRET_KEY", value = var.secret_key },
-        { name = "SKIP_DB_SETUP", value = "true" },
-        
-        # Database Connection
-        { name = "DATABASE_URL", value = "postgresql://${var.db_username}:${var.db_password}@${module.rds_session.db_endpoint}/session_db" },
-        { name = "DB_HOST", value = module.rds_session.db_host },
-        { name = "DB_PORT", value = "5432" },
-        { name = "DB_NAME", value = "session_db" },
-        { name = "DB_USER", value = var.db_username },
-        { name = "DB_PASSWORD", value = var.db_password },
-        
-        # Kafka Configuration
-        { name = "KAFKA_BOOTSTRAP_SERVERS", value = "kafka.${module.service_discovery.namespace_name}:29092" },
-        { name = "SCHEMA_REGISTRY_URL", value = "http://schema-registry.${module.service_discovery.namespace_name}:8081" },
-        
-        # Kafka Topics
-        { name = "TOPIC_QUESTION_CHOSEN", value = var.kafka_topic_question_chosen },
-        { name = "TOPIC_SESSION_CREATED", value = var.kafka_topic_session_created },
-        
-        # Consumer Group
-        { name = "SESSION_GROUP_ID", value = "session-service-group" },
-        
-        # Service URLs
-        { name = "USER_SERVICE_URL", value = "http://user-service.${module.service_discovery.namespace_name}:8000" },
-        { name = "QUESTION_SERVICE_URL", value = "http://question-service.${module.service_discovery.namespace_name}:8000" }
+        { name = "AWS_SECRET_NAME", value = aws_secretsmanager_secret.ecs_env.name },
+        { name = "AWS_REGION", value = var.aws_region }
       ]
 
       logConfiguration = {
@@ -1389,31 +1228,8 @@ resource "aws_ecs_task_definition" "session_consumer_session_end" {
       essential = true
 
       environment = [
-        { name = "DEBUG", value = "false" },
-        { name = "SECRET_KEY", value = var.secret_key },
-        { name = "SKIP_DB_SETUP", value = "true" },
-        
-        # Database Connection
-        { name = "DATABASE_URL", value = "postgresql://${var.db_username}:${var.db_password}@${module.rds_session.db_endpoint}/session_db" },
-        { name = "DB_HOST", value = module.rds_session.db_host },
-        { name = "DB_PORT", value = "5432" },
-        { name = "DB_NAME", value = "session_db" },
-        { name = "DB_USER", value = var.db_username },
-        { name = "DB_PASSWORD", value = var.db_password },
-        
-        # Kafka Configuration
-        { name = "KAFKA_BOOTSTRAP_SERVERS", value = "kafka.${module.service_discovery.namespace_name}:29092" },
-        { name = "SCHEMA_REGISTRY_URL", value = "http://schema-registry.${module.service_discovery.namespace_name}:8081" },
-        
-        # Kafka Topics
-        { name = "TOPIC_SESSION_END", value = var.kafka_topic_session_end },
-        
-        # Consumer Group
-        { name = "SESSION_GROUP_ID", value = "session-service-group" },
-        
-        # Service URLs
-        { name = "USER_SERVICE_URL", value = "http://user-service.${module.service_discovery.namespace_name}:8000" },
-        { name = "QUESTION_SERVICE_URL", value = "http://question-service.${module.service_discovery.namespace_name}:8000" }
+        { name = "AWS_SECRET_NAME", value = aws_secretsmanager_secret.ecs_env.name },
+        { name = "AWS_REGION", value = var.aws_region }
       ]
 
       logConfiguration = {
@@ -1485,36 +1301,8 @@ resource "aws_ecs_task_definition" "matching_consumer_session_created" {
       essential = true
 
       environment = [
-        { name = "DEBUG", value = "false" },
-        { name = "PORT", value = "8000" },
-        
-        # Database Connection
-        { name = "DATABASE_URL", value = "postgresql://${var.db_username}:${var.db_password}@${module.rds_matching.db_endpoint}/matching_db" },
-        { name = "DB_HOST", value = module.rds_matching.db_host },
-        { name = "DB_PORT", value = "5432" },
-        { name = "DB_NAME", value = "matching_db" },
-        { name = "DB_USER", value = var.db_username },
-        { name = "DB_PASSWORD", value = var.db_password },
-        
-        # Redis Connection
-        { name = "REDIS_URL", value = "redis://${module.elasticache_matching.redis_endpoint}:6379/0" },
-        { name = "REDIS_HOST", value = module.elasticache_matching.redis_endpoint },
-        { name = "REDIS_PORT", value = "6379" },
-        
-        # Kafka Configuration
-        { name = "KAFKA_BOOTSTRAP_SERVERS", value = "kafka.${module.service_discovery.namespace_name}:29092" },
-        { name = "SCHEMA_REGISTRY_URL", value = "http://schema-registry.${module.service_discovery.namespace_name}:8081" },
-        
-        # Kafka Topics
-        { name = "TOPIC_SESSION_CREATED", value = var.kafka_topic_session_created },
-        { name = "TOPIC_MATCH_FOUND", value = var.kafka_topic_match_found },
-        
-        # Consumer Group
-        { name = "MATCHING_GROUP_ID", value = "matching-service-group" },
-        
-        # Service URLs
-        { name = "USER_SERVICE_URL", value = "http://user-service.${module.service_discovery.namespace_name}:8000" },
-        { name = "QUESTION_SERVICE_URL", value = "http://question-service.${module.service_discovery.namespace_name}:8000" }
+        { name = "AWS_SECRET_NAME", value = aws_secretsmanager_secret.ecs_env.name },
+        { name = "AWS_REGION", value = var.aws_region }
       ]
 
       logConfiguration = {
@@ -1565,3 +1353,36 @@ resource "aws_ecs_service" "matching_consumer_session_created" {
     }
   )
 }
+
+# =============================================================================
+# Phase 8: AWS Secrets Manager
+# =============================================================================
+
+# Create Secrets Manager secret to store all environment variables
+resource "aws_secretsmanager_secret" "ecs_env" {
+  name        = "${var.project_name}/${var.environment}/env"
+  description = "Environment variables for ${var.project_name} ${var.environment} ECS services"
+  
+  recovery_window_in_days = 7  # Allow 7 days to recover if accidentally deleted
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-${var.environment}-ecs-env"
+    }
+  )
+}
+
+# Placeholder secret version - will be updated by upload script
+resource "aws_secretsmanager_secret_version" "ecs_env" {
+  secret_id     = aws_secretsmanager_secret.ecs_env.id
+  secret_string = jsonencode({
+    PLACEHOLDER = "Run scripts/upload-secrets-to-aws.sh to populate this secret"
+  })
+
+  lifecycle {
+    ignore_changes = [secret_string]  # Ignore changes made by upload script
+  }
+}
+
+# =============================================================================
