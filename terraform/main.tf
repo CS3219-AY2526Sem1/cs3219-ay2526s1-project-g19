@@ -219,22 +219,22 @@ module "rds_matching" {
   tags = var.tags
 }
 
-# History Database
-module "rds_history" {
+# Session Database (replaces History Database)
+module "rds_session" {
   source = "./modules/rds"
 
-  name_prefix          = "${var.project_name}-${var.environment}-history"
+  name_prefix          = "${var.project_name}-${var.environment}-session"
   vpc_id               = module.vpc.vpc_id
   database_subnet_ids  = module.vpc.private_subnet_ids
   db_subnet_group_name = aws_db_subnet_group.main.name
-  security_group_ids   = [module.security_groups.history_db_security_group_id]
+  security_group_ids   = [module.security_groups.session_db_security_group_id]
 
   # Database configuration
   engine_version        = var.db_engine_version
   db_instance_class     = var.db_instance_class
   allocated_storage     = var.db_allocated_storage
   max_allocated_storage = var.db_max_allocated_storage
-  database_names        = ["history_db"]
+  database_names        = ["session_db"]
   master_username       = var.db_username
   master_password       = var.db_password
 
@@ -406,9 +406,12 @@ locals {
     "user-service"          = {}
     "question-service"      = {}
     "matching-service"      = {}
-    "history-service"       = {}
+    "session-service"       = {}  # Replaces history-service
+    "execution-service"     = {}
     "collaboration-service" = {}
     "chat-service"          = {}
+    "kafka"                 = {}
+    "schema-registry"       = {}
   }
 }
 
@@ -666,14 +669,14 @@ module "ecs_service_matching" {
 }
 
 # -----------------------------------------------------------------------------
-# 4. History Service
+# 4. Session Service (replaces History Service)
 # -----------------------------------------------------------------------------
-module "ecs_service_history" {
+module "ecs_service_session" {
   source = "./modules/ecs-service"
 
   project_name = var.project_name
   environment  = var.environment
-  service_name = "history-service"
+  service_name = "session-service"
 
   # ECS Configuration
   cluster_id   = module.ecs_cluster.cluster_id
@@ -685,11 +688,11 @@ module "ecs_service_history" {
   security_group_ids = [module.security_groups.ecs_security_group_id]
 
   # Container Configuration
-  container_image  = "${aws_ecr_repository.services["history-service"].repository_url}:latest"
+  container_image  = "${aws_ecr_repository.services["session-service"].repository_url}:latest"
   container_port   = 8000
-  container_cpu    = var.history_service_cpu
-  container_memory = var.history_service_memory
-  desired_count    = var.history_service_desired_count
+  container_cpu    = var.session_service_cpu
+  container_memory = var.session_service_memory
+  desired_count    = var.session_service_desired_count
 
   # Environment Variables
   environment_variables = {
@@ -698,12 +701,25 @@ module "ecs_service_history" {
     ALLOWED_HOSTS = "*"  # Allow all hosts since service is behind ALB in private VPC
 
     # Database Connection
-    DATABASE_URL = "postgresql://${var.db_username}:${var.db_password}@${module.rds_history.db_endpoint}/history_db"
-    DB_HOST      = module.rds_history.db_host
+    DATABASE_URL = "postgresql://${var.db_username}:${var.db_password}@${module.rds_session.db_endpoint}/session_db"
+    DB_HOST      = module.rds_session.db_host
     DB_PORT      = "5432"
-    DB_NAME      = "history_db"
+    DB_NAME      = "session_db"
     DB_USER      = var.db_username
     DB_PASSWORD  = var.db_password
+
+    # Kafka Configuration
+    KAFKA_BOOTSTRAP_SERVERS = "kafka.${module.service_discovery.namespace_name}:29092"
+    SCHEMA_REGISTRY_URL     = "http://schema-registry.${module.service_discovery.namespace_name}:8081"
+
+    # Kafka Topics
+    TOPIC_MATCH_FOUND       = var.kafka_topic_match_found
+    TOPIC_QUESTION_CHOSEN   = var.kafka_topic_question_chosen
+    TOPIC_SESSION_CREATED   = var.kafka_topic_session_created
+    TOPIC_SESSION_END       = var.kafka_topic_session_end
+
+    # Kafka Consumer Group
+    SESSION_GROUP_ID        = "session-service-group"
 
     # Service-to-Service URLs
     USER_SERVICE_URL          = "http://user-service.${module.service_discovery.namespace_name}:8000"
@@ -721,11 +737,11 @@ module "ecs_service_history" {
 
   # Load Balancer
   enable_load_balancer = true
-  target_group_arn     = module.alb.target_group_arns["history-service"]
+  target_group_arn     = module.alb.target_group_arns["session-service"]
 
   # Service Discovery
   enable_service_discovery      = true
-  service_discovery_service_arn = module.service_discovery.service_discovery_services["history-service"]
+  service_discovery_service_arn = module.service_discovery.service_discovery_services["session-service"]
 
   tags = var.tags
 }
@@ -854,7 +870,66 @@ module "ecs_service_chat" {
 }
 
 # -----------------------------------------------------------------------------
-# 7. Frontend (React + Nginx)
+# 7. Execution Service (Code Execution with Judge0)
+# -----------------------------------------------------------------------------
+module "ecs_service_execution" {
+  source = "./modules/ecs-service"
+
+  project_name = var.project_name
+  environment  = var.environment
+  service_name = "execution-service"
+
+  # ECS Configuration
+  cluster_id   = module.ecs_cluster.cluster_id
+  cluster_name = module.ecs_cluster.cluster_name
+  vpc_id       = module.vpc.vpc_id
+
+  # Networking
+  private_subnet_ids = module.vpc.private_subnet_ids
+  security_group_ids = [module.security_groups.ecs_security_group_id]
+
+  # Container Configuration
+  container_image  = "${aws_ecr_repository.services["execution-service"].repository_url}:latest"
+  container_port   = 8000
+  container_cpu    = var.execution_service_cpu
+  container_memory = var.execution_service_memory
+  desired_count    = var.execution_service_desired_count
+
+  # Environment Variables
+  environment_variables = {
+    DEBUG         = "false"
+    SECRET_KEY    = var.secret_key
+    ALLOWED_HOSTS = "*"  # Allow all hosts since service is behind ALB in private VPC
+
+    # Judge0 Configuration (External Service)
+    JUDGE0_URL     = var.judge0_url
+    JUDGE0_API_KEY = var.judge0_api_key
+
+    # Service-to-Service URLs
+    QUESTION_SERVICE_URL = "http://question-service.${module.service_discovery.namespace_name}:8000"
+  }
+
+  # IAM Roles
+  task_execution_role_arn = module.ecs_cluster.task_execution_role_arn
+  task_role_arn           = module.ecs_cluster.task_role_arn
+
+  # CloudWatch Logs
+  log_group_name = module.ecs_cluster.cloudwatch_log_group_name
+  aws_region     = var.aws_region
+
+  # Load Balancer
+  enable_load_balancer = true
+  target_group_arn     = module.alb.target_group_arns["execution-service"]
+
+  # Service Discovery
+  enable_service_discovery      = true
+  service_discovery_service_arn = module.service_discovery.service_discovery_services["execution-service"]
+
+  tags = var.tags
+}
+
+# -----------------------------------------------------------------------------
+# 8. Frontend (React + Nginx)
 # -----------------------------------------------------------------------------
 module "ecs_service_frontend" {
   source = "./modules/ecs-service"
@@ -887,17 +962,17 @@ module "ecs_service_frontend" {
     NGINX_USER_SERVICE_HOST          = "user-service.${module.service_discovery.namespace_name}"
     NGINX_QUESTION_SERVICE_HOST      = "question-service.${module.service_discovery.namespace_name}"
     NGINX_MATCHING_SERVICE_HOST      = "matching-service.${module.service_discovery.namespace_name}"
-    NGINX_HISTORY_SERVICE_HOST       = "history-service.${module.service_discovery.namespace_name}"
     NGINX_SESSION_SERVICE_HOST       = "session-service.${module.service_discovery.namespace_name}"
+    NGINX_EXECUTION_SERVICE_HOST     = "execution-service.${module.service_discovery.namespace_name}"
     NGINX_COLLABORATION_SERVICE_HOST = "collaboration-service.${module.service_discovery.namespace_name}"
     NGINX_CHAT_SERVICE_HOST          = "chat-service.${module.service_discovery.namespace_name}"
 
     # VITE build-time variables (embedded in JS bundle)
     VITE_QUESTION_SERVICE_URL      = "/question-service-api"
     VITE_MATCHING_SERVICE_URL      = "/matching-service-api"
-    VITE_HISTORY_SERVICE_URL       = "/history-service-api"
     VITE_USER_SERVICE_URL          = "/user-service-api"
     VITE_SESSION_SERVICE_URL       = "/session-service-api"
+    VITE_EXECUTION_SERVICE_URL     = "/execution-service-api"
     VITE_COLLABORATION_SERVICE_URL = "/collaboration-service-api"
     VITE_CHAT_SERVICE_URL          = "/chat-service-api"
   }
@@ -948,8 +1023,15 @@ locals {
       cpu_target        = var.autoscaling_cpu_target
       memory_target     = var.autoscaling_memory_target
     }
-    "history-service" = {
-      service_name      = module.ecs_service_history.service_name
+    "session-service" = {
+      service_name      = module.ecs_service_session.service_name
+      min_capacity      = var.ecs_min_capacity
+      max_capacity      = var.ecs_max_capacity
+      cpu_target        = var.autoscaling_cpu_target
+      memory_target     = var.autoscaling_memory_target
+    }
+    "execution-service" = {
+      service_name      = module.ecs_service_execution.service_name
       min_capacity      = var.ecs_min_capacity
       max_capacity      = var.ecs_max_capacity
       cpu_target        = var.autoscaling_cpu_target

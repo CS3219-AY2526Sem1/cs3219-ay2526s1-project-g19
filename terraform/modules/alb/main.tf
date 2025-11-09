@@ -39,12 +39,19 @@ locals {
       path_pattern = "/matching-service-api/*"
       priority    = 30
     }
-    history-service = {
+    session-service = {
       port        = 8000
       protocol    = "HTTP"
       health_path = "/health"  # Django admin exists by default
-      path_pattern = "/history-service-api/*"
-      priority    = 40
+      path_pattern = "/session-service-api/*"
+      priority    = 40  # Replaces history-service priority
+    }
+    execution-service = {
+      port        = 8000
+      protocol    = "HTTP"
+      health_path = "/health"  # Django service
+      path_pattern = "/execution-service-api/*"
+      priority    = 45
     }
     collaboration-service = {
       port        = 8000

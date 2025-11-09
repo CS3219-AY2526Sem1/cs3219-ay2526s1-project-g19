@@ -29,9 +29,12 @@ locals {
     "user-service",
     "question-service",
     "matching-service",
-    "history-service",
+    "session-service",     # Replaces history-service
+    "execution-service",
     "collaboration-service",
-    "chat-service"
+    "chat-service",
+    "kafka",
+    "schema-registry"
   ]
 }
 

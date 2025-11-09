@@ -145,7 +145,7 @@ resource "aws_vpc_security_group_egress_rule" "ecs_all" {
 # RDS PostgreSQL Security Groups (4 databases)
 # =============================================================================
 locals {
-  db_names = ["user", "question", "matching", "history"]
+  db_names = ["user", "question", "matching", "session"]  # Replaced history with session
 }
 
 resource "aws_security_group" "db" {
