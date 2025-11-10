@@ -14,20 +14,14 @@ if [ -n "$AWS_SECRET_NAME" ] && [ -n "$AWS_REGION" ]; then
         --output text 2>/dev/null)
 
     if [ $? -eq 0 ] && [ -n "$SECRET_STRING" ]; then
-        # Export variables from secret
-        while IFS= read -r line; do
-            # Skip empty lines and comments
-            if [ -z "$line" ] || echo "$line" | grep -q '^[[:space:]]*#'; then
-                continue
-            fi
-            # Export the variable
-            if echo "$line" | grep -q '^[A-Za-z_][A-Za-z0-9_]*='; then
-                export "$line"
-            fi
-        done <<EOF
-$SECRET_STRING
-EOF
+        # Save to temp file and source it
+        echo "$SECRET_STRING" > /tmp/.env
+        set -a
+        . /tmp/.env
+        set +a
+        rm -f /tmp/.env
         echo "[Secrets] ✓ Environment variables loaded"
+        echo "[Debug] KAFKA_BOOTSTRAP_SERVERS=$KAFKA_BOOTSTRAP_SERVERS"
     else
         echo "[Secrets] ⚠ Failed to fetch, using task definition env vars"
     fi

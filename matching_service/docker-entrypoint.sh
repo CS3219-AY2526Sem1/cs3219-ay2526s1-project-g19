@@ -26,6 +26,7 @@ if [ -n "$AWS_SECRET_NAME" ] && [ -n "$AWS_REGION" ]; then
             fi
         done <<< "$SECRET_STRING"
         echo "[Secrets] ✓ Environment variables loaded"
+        echo "[Debug] KAFKA_BOOTSTRAP_SERVERS=$KAFKA_BOOTSTRAP_SERVERS"
     else
         echo "[Secrets] ⚠ Failed to fetch, using task definition env vars"
     fi
