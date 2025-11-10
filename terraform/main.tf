@@ -1057,7 +1057,7 @@ module "ecs_service_kafka" {
   security_group_ids = [module.security_groups.ecs_security_group_id]
 
   # Container Configuration
-  container_image  = "${aws_ecr_repository.services["kafka"].repository_url}:latest"
+  container_image  = "confluentinc/cp-kafka:7.5.0"
   container_port   = 29092
   container_cpu    = var.kafka_cpu
   container_memory = var.kafka_memory
@@ -1107,7 +1107,7 @@ module "ecs_service_schema_registry" {
   security_group_ids = [module.security_groups.ecs_security_group_id]
 
   # Container Configuration
-  container_image  = "${aws_ecr_repository.services["schema-registry"].repository_url}:latest"
+  container_image  = "confluentinc/cp-schema-registry:7.5.0"
   container_port   = 8081
   container_cpu    = var.schema_registry_cpu
   container_memory = var.schema_registry_memory

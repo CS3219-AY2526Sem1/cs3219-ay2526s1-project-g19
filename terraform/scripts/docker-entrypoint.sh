@@ -9,7 +9,7 @@
 set -e
 
 # Configuration from environment or defaults
-SECRET_NAME="${AWS_SECRET_NAME:-peerprep/production/env}"
+SECRET_NAME="${AWS_SECRET_NAME:-peerprep/prod/env}"
 AWS_REGION="${AWS_REGION:-us-east-1}"
 ENV_FILE="/app/.env"
 

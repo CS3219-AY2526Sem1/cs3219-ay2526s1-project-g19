@@ -7,6 +7,17 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # Set work directory
 WORKDIR /app
 
+# Install AWS CLI and system dependencies
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        curl \
+        unzip \
+    && curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+    && unzip awscliv2.zip \
+    && ./aws/install \
+    && rm -rf aws awscliv2.zip \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

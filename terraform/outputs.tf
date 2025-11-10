@@ -65,26 +65,26 @@ output "redis_security_group_ids" {
 # Phase 2: RDS Outputs
 # -----------------------------------------------------------------------------
 output "rds_user_endpoint" {
-  description = "User database endpoint"
-  value       = module.rds_user.db_endpoint
+  description = "User database hostname (without port)"
+  value       = module.rds_user.db_host
   sensitive   = true
 }
 
 output "rds_question_endpoint" {
-  description = "Question database endpoint"
-  value       = module.rds_question.db_endpoint
+  description = "Question database hostname (without port)"
+  value       = module.rds_question.db_host
   sensitive   = true
 }
 
 output "rds_matching_endpoint" {
-  description = "Matching database endpoint"
-  value       = module.rds_matching.db_endpoint
+  description = "Matching database hostname (without port)"
+  value       = module.rds_matching.db_host
   sensitive   = true
 }
 
 output "rds_session_endpoint" {
-  description = "Session database endpoint"
-  value       = module.rds_session.db_endpoint
+  description = "Session database hostname (without port)"
+  value       = module.rds_session.db_host
   sensitive   = true
 }
 

@@ -12,7 +12,7 @@ set -euo pipefail
 
 AWS_REGION=${AWS_REGION:-ap-southeast-1}
 PROJECT_NAME=${PROJECT_NAME:-peerprep}
-SECRET_ENVIRONMENT=${SECRET_ENVIRONMENT:-production}
+SECRET_ENVIRONMENT=${SECRET_ENVIRONMENT:-prod}
 ENV_FILE="${1:-../.env.prod-ecs}"
 UPLOAD_SECRETS=${UPLOAD_SECRETS:-true}
 AUTO_APPROVE=${AUTO_APPROVE:-false}
@@ -195,7 +195,7 @@ if [[ "${UPLOAD_SECRETS}" == "false" || "${UPLOAD_SECRETS}" == "FALSE" ]]; then
 else
     log_info "Uploading $ENV_FILE to AWS Secrets Manager..."
     ./scripts/upload-secrets-to-aws.sh "$ENV_FILE" "$SECRET_ENVIRONMENT" "$AWS_REGION"
-    log_success "Secrets Manager updated for ${PROJECT_NAME}/${SECRET_ENVIRONMENT}/env"
+    log_success "Secrets uploaded to ${PROJECT_NAME}/${SECRET_ENVIRONMENT}/env"
 fi
 
 echo ""

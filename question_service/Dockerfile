@@ -14,6 +14,12 @@ RUN apt-get update \
         build-essential \
         libpq-dev \
         netcat-openbsd \
+        curl \
+        unzip \
+    && curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+    && unzip awscliv2.zip \
+    && ./aws/install \
+    && rm -rf aws awscliv2.zip \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies

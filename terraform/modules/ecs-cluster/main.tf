@@ -152,6 +152,13 @@ resource "aws_iam_role_policy" "ecs_task_role_policy" {
           "logs:PutLogEvents"
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = "*"
       }
     ]
   })
