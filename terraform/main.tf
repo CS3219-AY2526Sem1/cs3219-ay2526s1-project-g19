@@ -1063,10 +1063,29 @@ module "ecs_service_kafka" {
   container_memory = var.kafka_memory
   desired_count    = 1 # Single broker for now
 
-  # Environment Variables - Fetched from AWS Secrets Manager
+  # Environment Variables - Kafka KRaft Configuration
   environment_variables = {
-    AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
-    AWS_REGION      = var.aws_region
+    # KRaft mode configuration (no Zookeeper)
+    KAFKA_NODE_ID                       = "1"
+    KAFKA_PROCESS_ROLES                 = "broker,controller"
+    KAFKA_CONTROLLER_QUORUM_VOTERS      = "1@kafka.peerprep-prod.local:29093"
+    KAFKA_CONTROLLER_LISTENER_NAMES     = "CONTROLLER"
+    CLUSTER_ID                          = "aOge9G1DRLKAe03PP99tXQ"
+
+    # Listener configuration
+    KAFKA_LISTENERS                     = "PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093"
+    KAFKA_ADVERTISED_LISTENERS          = "PLAINTEXT://kafka.peerprep-prod.local:29092"
+    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP = "PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT"
+    KAFKA_INTER_BROKER_LISTENER_NAME    = "PLAINTEXT"
+
+    # Cluster configuration
+    KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR = "1"
+    KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = "1"
+    KAFKA_TRANSACTION_STATE_LOG_MIN_ISR = "1"
+
+    # Log configuration
+    KAFKA_LOG_DIRS                      = "/var/lib/kafka/data"
+    KAFKA_AUTO_CREATE_TOPICS_ENABLE     = "true"
   }
 
   # IAM Roles
