@@ -48,12 +48,18 @@ resource "aws_ecs_task_definition" "main" {
         }
       }
 
-      healthCheck = {
+      healthCheck = length(var.container_health_check_command) > 0 ? {
+        command     = var.container_health_check_command
+        interval    = var.container_health_check_interval
+        timeout     = var.container_health_check_timeout
+        retries     = var.container_health_check_retries
+        startPeriod = var.container_health_check_start_period
+        } : {
         command     = ["CMD-SHELL", "python - <<'PY'\nimport sys,urllib.request\ntry:\n  r=urllib.request.urlopen('http://127.0.0.1:${var.container_port}${var.container_health_check_path}', timeout=2)\n  sys.exit(0 if r.getcode()==200 else 1)\nexcept Exception:\n  sys.exit(1)\nPY"]
-        interval    = 30
-        timeout     = 5
-        retries     = 3
-        startPeriod = 60
+        interval    = var.container_health_check_interval
+        timeout     = var.container_health_check_timeout
+        retries     = var.container_health_check_retries
+        startPeriod = var.container_health_check_start_period
       }
     }
   ])

@@ -71,6 +71,36 @@ variable "container_health_check_path" {
   default     = "/health"
 }
 
+variable "container_health_check_command" {
+  description = "Override for the container health check command (leave empty to use default HTTP check)"
+  type        = list(string)
+  default     = []
+}
+
+variable "container_health_check_interval" {
+  description = "Interval between health checks"
+  type        = number
+  default     = 30
+}
+
+variable "container_health_check_timeout" {
+  description = "Timeout for health checks"
+  type        = number
+  default     = 5
+}
+
+variable "container_health_check_retries" {
+  description = "Consecutive failures before marking unhealthy"
+  type        = number
+  default     = 3
+}
+
+variable "container_health_check_start_period" {
+  description = "Grace period before starting health checks"
+  type        = number
+  default     = 60
+}
+
 # Environment Variables
 variable "environment_variables" {
   description = "Map of environment variables for the container"

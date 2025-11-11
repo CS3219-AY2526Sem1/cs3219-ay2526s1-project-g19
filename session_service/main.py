@@ -21,7 +21,7 @@ with open("log_config.json", "r") as f:
 logging.config.dictConfig(config)
 logger = logging.getLogger(__name__)
 
-SERVICE_PREFIX = os.getenv("SERVICE_PREFIX", "/matching-service-api")
+SERVICE_PREFIX = os.getenv("SERVICE_PREFIX", "/session-service-api")
 if SERVICE_PREFIX and not SERVICE_PREFIX.startswith("/"):
     SERVICE_PREFIX = "/" + SERVICE_PREFIX
 SERVICE_PREFIX = SERVICE_PREFIX.rstrip("/")
@@ -42,6 +42,11 @@ app.add_middleware(
 )
 if SERVICE_PREFIX:
     app.add_middleware(FixedPrefixMiddleware, prefix=SERVICE_PREFIX)
+
+
+@app.get("/health", include_in_schema=False)
+async def health_check():
+    return {"status": "healthy"}
 
 
 @router.get("", response_model=ActiveSessionSchema | None)

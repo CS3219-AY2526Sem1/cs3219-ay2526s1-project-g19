@@ -72,6 +72,11 @@ PY
 
 load_aws_secrets
 
+if [ -n "$SERVICE_PREFIX_OVERRIDE" ]; then
+    export SERVICE_PREFIX="$SERVICE_PREFIX_OVERRIDE"
+    echo "[Config] SERVICE_PREFIX overridden to $SERVICE_PREFIX"
+fi
+
 echo "Starting matching service container..."
 
 # Register schemas

@@ -72,6 +72,11 @@ PY
 
 load_aws_secrets
 
+if [ -n "$SERVICE_PREFIX_OVERRIDE" ]; then
+    export SERVICE_PREFIX="$SERVICE_PREFIX_OVERRIDE"
+    echo "[Config] SERVICE_PREFIX overridden to $SERVICE_PREFIX"
+fi
+
 # Register kafka schema registry schemas
 if [ -f "kafka/scripts/register_schemas.py" ]; then
   echo "Registering Kafka schemas..."
