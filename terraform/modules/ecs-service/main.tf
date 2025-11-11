@@ -17,6 +17,29 @@ resource "aws_ecs_task_definition" "main" {
   execution_role_arn       = var.task_execution_role_arn
   task_role_arn            = var.task_role_arn
 
+  # EFS Volume Configuration (optional)
+  dynamic "volume" {
+    for_each = var.efs_volume_configuration != null ? [var.efs_volume_configuration] : []
+    content {
+      name = volume.value.name
+
+      efs_volume_configuration {
+        file_system_id          = volume.value.file_system_id
+        root_directory          = volume.value.root_directory
+        transit_encryption      = volume.value.transit_encryption
+        transit_encryption_port = volume.value.transit_encryption_port
+
+        dynamic "authorization_config" {
+          for_each = volume.value.access_point_id != null ? [1] : []
+          content {
+            access_point_id = volume.value.access_point_id
+            iam             = volume.value.iam
+          }
+        }
+      }
+    }
+  }
+
   container_definitions = jsonencode([
     {
       name      = var.service_name
@@ -29,6 +52,15 @@ resource "aws_ecs_task_definition" "main" {
           protocol      = "tcp"
         }
       ]
+
+      # Mount points for EFS volumes
+      mountPoints = var.efs_volume_configuration != null ? [
+        {
+          sourceVolume  = var.efs_volume_configuration.name
+          containerPath = var.efs_volume_configuration.container_path
+          readOnly      = false
+        }
+      ] : []
 
       environment = [
         for key, value in var.environment_variables : {

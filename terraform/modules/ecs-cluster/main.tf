@@ -159,6 +159,15 @@ resource "aws_iam_role_policy" "ecs_task_role_policy" {
           "secretsmanager:GetSecretValue"
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "elasticfilesystem:ClientMount",
+          "elasticfilesystem:ClientWrite",
+          "elasticfilesystem:ClientRootAccess"
+        ]
+        Resource = "*"
       }
     ]
   })

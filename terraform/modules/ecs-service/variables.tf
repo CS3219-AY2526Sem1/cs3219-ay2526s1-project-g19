@@ -201,3 +201,19 @@ variable "use_capacity_providers" {
   type        = bool
   default     = true
 }
+
+# EFS Volume Configuration
+variable "efs_volume_configuration" {
+  description = "EFS volume configuration for persistent storage"
+  type = object({
+    name                    = string
+    file_system_id          = string
+    root_directory          = string
+    container_path          = string
+    transit_encryption      = string
+    transit_encryption_port = number
+    access_point_id         = string
+    iam                     = string
+  })
+  default = null
+}

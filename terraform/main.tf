@@ -35,6 +35,12 @@ provider "aws" {
   }
 }
 
+# Provider alias without default tags for resources with IAM tagging restrictions
+provider "aws" {
+  alias  = "no_default_tags"
+  region = var.aws_region
+}
+
 # =============================================================================
 # Data Sources
 # =============================================================================
@@ -1066,6 +1072,39 @@ resource "aws_appautoscaling_policy" "ecs_requests_policy" {
 # =============================================================================
 
 # -----------------------------------------------------------------------------
+# 8b. EFS for Kafka Persistent Storage
+# -----------------------------------------------------------------------------
+module "efs_kafka" {
+  source = "./modules/efs"
+
+  # Use separate provider without default tags to avoid IAM permission issues
+  providers = {
+    aws = aws.no_default_tags
+  }
+
+  project_name = var.project_name
+  environment  = var.environment
+  name         = "kafka-data"
+
+  subnet_ids         = module.vpc.private_subnet_ids
+  security_group_ids = [module.security_groups.efs_security_group_id]
+
+  # Performance settings for Kafka workload
+  performance_mode = "generalPurpose"
+  throughput_mode  = "bursting"
+  encrypted        = true
+
+  # Create access point for better permission management
+  create_access_point         = true
+  posix_user_uid              = 1000 # appuser in Kafka container
+  posix_user_gid              = 1000
+  root_directory_path         = "/kafka"
+  root_directory_permissions  = "755"
+
+  tags = {}  # Empty tags to avoid IAM permission issues
+}
+
+# -----------------------------------------------------------------------------
 # 9. Kafka Broker (KRaft Mode - No Zookeeper)
 # -----------------------------------------------------------------------------
 module "ecs_service_kafka" {
@@ -1120,6 +1159,18 @@ module "ecs_service_kafka" {
     KAFKA_AUTO_CREATE_TOPICS_ENABLE = "true"
   }
 
+  # EFS Volume Configuration for Persistent Storage
+  efs_volume_configuration = {
+    name                    = "kafka-data"
+    file_system_id          = module.efs_kafka.file_system_id
+    root_directory          = "/"
+    container_path          = "/var/lib/kafka/data"
+    transit_encryption      = "ENABLED"
+    transit_encryption_port = 2049
+    access_point_id         = module.efs_kafka.access_point_id
+    iam                     = "ENABLED"
+  }
+
   # IAM Roles
   task_execution_role_arn = module.ecs_cluster.task_execution_role_arn
   task_role_arn           = module.ecs_cluster.task_role_arn
@@ -1134,6 +1185,9 @@ module "ecs_service_kafka" {
   # Service Discovery (for internal DNS)
   enable_service_discovery      = true
   service_discovery_service_arn = module.service_discovery.service_discovery_services["kafka"]
+
+  # Ensure EFS is created before Kafka service
+  depends_on = [module.efs_kafka]
 
   tags = var.tags
 }

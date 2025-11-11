@@ -61,3 +61,8 @@ output "chat_redis_security_group_id" {
   description = "Security group ID for chat Redis"
   value       = aws_security_group.redis["chat"].id
 }
+
+output "efs_security_group_id" {
+  description = "Security group ID for EFS mount targets"
+  value       = aws_security_group.efs.id
+}
