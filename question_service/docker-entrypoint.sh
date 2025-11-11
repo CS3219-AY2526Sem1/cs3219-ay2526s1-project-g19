@@ -113,6 +113,12 @@ main() {
     echo "SKIP_DB_SETUP is true; skipping migrations and collectstatic."
   fi
 
+  # Start Kafka consumer in background
+  echo "Starting Kafka consumer in background..."
+  python manage.py run_question_consumer &
+  CONSUMER_PID=$!
+  echo "Kafka consumer started with PID $CONSUMER_PID"
+
   echo "Starting main application..."
   exec "$@"
 }

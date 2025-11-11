@@ -118,5 +118,16 @@ else
   echo "SKIP_DB_SETUP=true, skipping migrations."
 fi
 
+# Start Kafka consumers in background
+echo "Starting Kafka question_chosen consumer..."
+python -m kafka.consumers.question_chosen &
+QUESTION_CHOSEN_PID=$!
+echo "Question chosen consumer started with PID $QUESTION_CHOSEN_PID"
+
+echo "Starting Kafka session_end consumer..."
+python -m kafka.consumers.session_end &
+SESSION_END_PID=$!
+echo "Session end consumer started with PID $SESSION_END_PID"
+
 # start app
 exec "$@"
