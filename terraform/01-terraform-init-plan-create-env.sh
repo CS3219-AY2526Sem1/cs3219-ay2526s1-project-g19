@@ -85,6 +85,11 @@ PY
     log_success "Updated $placeholder -> $value"
 }
 
+url_encode_password() {
+    local password=$1
+    python3 -c "import urllib.parse; print(urllib.parse.quote('$password', safe=''))"
+}
+
 get_output() {
     local key=$1
     jq -r --arg key "$key" '.[$key].value // empty' terraform-outputs.json
@@ -290,6 +295,9 @@ MATCHING_REDIS=$(get_output "redis_matching_endpoint")
 COLLAB_REDIS=$(get_output "redis_collaboration_endpoint")
 CHAT_REDIS=$(get_output "redis_chat_endpoint")
 
+# Get database password from terraform.tfvars
+DB_PASSWORD=$(grep "^db_password" terraform.tfvars | sed 's/.*=\s*"\(.*\)"/\1/')
+
 replace_placeholder "CHANGEME_NAMESPACE" "$NAMESPACE"
 replace_placeholder "CHANGEME_ALB_DNS_NAME" "$ALB_DNS"
 replace_placeholder "CHANGEME_RDS_USER_ENDPOINT" "$USER_DB"
@@ -299,6 +307,41 @@ replace_placeholder "CHANGEME_RDS_SESSION_ENDPOINT" "$SESSION_DB"
 replace_placeholder "CHANGEME_ELASTICACHE_MATCHING_ENDPOINT" "$MATCHING_REDIS"
 replace_placeholder "CHANGEME_ELASTICACHE_COLLABORATION_ENDPOINT" "$COLLAB_REDIS"
 replace_placeholder "CHANGEME_ELASTICACHE_CHAT_ENDPOINT" "$CHAT_REDIS"
+
+# Replace database password placeholders (raw and URL-encoded)
+if [[ -n "$DB_PASSWORD" ]]; then
+    log_info "Updating database passwords..."
+
+    # URL-encode the password for DATABASE_URL strings
+    DB_PASSWORD_ENCODED=$(url_encode_password "$DB_PASSWORD")
+
+    # First replace the raw password in *_DB_PASSWORD variables
+    replace_placeholder "CHANGE_ME_SECURE_PASSWORD_HERE" "$DB_PASSWORD"
+
+    # Then replace the URL-encoded password in *_DATABASE_URL variables
+    # This needs to happen after the raw replacement to avoid double-encoding
+    python3 - "$ENV_FILE" "$DB_PASSWORD" "$DB_PASSWORD_ENCODED" <<'PY'
+import sys
+import re
+path, raw_password, encoded_password = sys.argv[1:4]
+
+with open(path, "r", encoding="utf-8") as fh:
+    data = fh.read()
+
+# Replace password in DATABASE_URL patterns (postgresql://user:PASSWORD@host:port/db)
+# Only replace in URL contexts, not in plain password fields
+data = re.sub(
+    r'(postgresql://[^:]+:)' + re.escape(raw_password) + r'(@[^/]+/\w+)',
+    r'\1' + encoded_password + r'\2',
+    data
+)
+
+with open(path, "w", encoding="utf-8") as fh:
+    fh.write(data)
+PY
+
+    log_success "Updated database passwords (raw and URL-encoded)"
+fi
 
 # Generic Redis placeholder (best-effort: use matching endpoint)
 if [[ -n "$MATCHING_REDIS" ]]; then
