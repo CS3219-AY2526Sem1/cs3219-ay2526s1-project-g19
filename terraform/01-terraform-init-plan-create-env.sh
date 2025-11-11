@@ -115,11 +115,133 @@ terraform_init() {
 }
 
 # -----------------------------------------------------------------------------
-# 1. Terraform init & plan
+# Pre-flight Checks & Auto-fixes
+# -----------------------------------------------------------------------------
+check_and_unlock_state() {
+    log_info "Checking for stale state locks..."
+
+    # Try to get lock info (will fail if no lock exists)
+    local lock_output=$(terraform plan -lock=false -detailed-exitcode 2>&1 || true)
+
+    # Check if there's a lock error
+    if echo "$lock_output" | grep -q "Error acquiring the state lock"; then
+        local lock_id=$(echo "$lock_output" | grep -oP 'ID:\s+\K[a-f0-9-]+' | head -1)
+
+        if [[ -n "$lock_id" ]]; then
+            log_warn "Found stale state lock (ID: $lock_id)"
+            log_warn "This usually happens when a previous operation was interrupted"
+
+            if [[ "$(to_lower "$AUTO_APPROVE")" == "true" ]]; then
+                log_info "AUTO_APPROVE=true, unlocking automatically..."
+                echo "yes" | terraform force-unlock "$lock_id" >/dev/null 2>&1
+                log_success "State unlocked"
+            else
+                read -p "Force unlock state? (yes/no): " UNLOCK_CONFIRM
+                if [[ "$UNLOCK_CONFIRM" == "yes" ]]; then
+                    echo "yes" | terraform force-unlock "$lock_id" >/dev/null 2>&1
+                    log_success "State unlocked"
+                else
+                    log_error "Cannot proceed with locked state"
+                    exit 1
+                fi
+            fi
+        fi
+    else
+        log_success "No stale locks found"
+    fi
+}
+
+check_and_fix_secrets() {
+    local secret_name="${PROJECT_NAME}/${SECRET_ENVIRONMENT}/env"
+
+    log_info "Checking Secrets Manager state..."
+
+    # Check if secret exists and is scheduled for deletion
+    if aws secretsmanager describe-secret \
+        --secret-id "$secret_name" \
+        --region "$AWS_REGION" 2>&1 | grep -q "scheduled for deletion"; then
+
+        log_warn "Secret is scheduled for deletion. Force deleting to recreate..."
+        aws secretsmanager delete-secret \
+            --secret-id "$secret_name" \
+            --region "$AWS_REGION" \
+            --force-delete-without-recovery >/dev/null 2>&1 || true
+
+        sleep 3
+        log_success "Secret deleted. Will be recreated."
+
+    # Check if secret exists but not in Terraform state
+    elif aws secretsmanager describe-secret \
+        --secret-id "$secret_name" \
+        --region "$AWS_REGION" >/dev/null 2>&1; then
+
+        if ! terraform state show aws_secretsmanager_secret.ecs_env >/dev/null 2>&1; then
+            log_warn "Secret exists but not in Terraform state. Importing..."
+            terraform import aws_secretsmanager_secret.ecs_env "$secret_name" || true
+
+            # Import version too
+            local version_id=$(aws secretsmanager get-secret-value \
+                --secret-id "$secret_name" \
+                --region "$AWS_REGION" \
+                --query 'VersionId' \
+                --output text 2>/dev/null)
+
+            local secret_arn=$(aws secretsmanager describe-secret \
+                --secret-id "$secret_name" \
+                --region "$AWS_REGION" \
+                --query 'ARN' \
+                --output text 2>/dev/null)
+
+            if [[ -n "$version_id" && -n "$secret_arn" ]]; then
+                terraform import aws_secretsmanager_secret_version.ecs_env "${secret_arn}|${version_id}" || true
+            fi
+
+            log_success "Secret imported into Terraform state"
+        fi
+    fi
+}
+
+check_terraform_vars() {
+    log_info "Checking terraform.tfvars..."
+
+    if [[ ! -f "terraform.tfvars" ]] || [[ ! -s "terraform.tfvars" ]]; then
+        log_warn "terraform.tfvars is missing or empty!"
+        log_warn "Creating terraform.tfvars with default password..."
+        log_warn "IMPORTANT: Change the db_password before production use!"
+
+        cat > terraform.tfvars <<'EOF'
+# =============================================================================
+# Terraform Variables - Production
+# =============================================================================
+# IMPORTANT: Change these values before production deployment!
+
+# Database password - CHANGE THIS!
+# Requirements: 8+ characters, no /, ", @, or spaces
+db_password = "PeerPrep2024!Secure#Pass"
+EOF
+        log_success "Created terraform.tfvars with default values"
+        log_error "Please review and update terraform.tfvars with secure credentials!"
+        read -p "Press Enter to continue after reviewing terraform.tfvars..."
+    fi
+}
+
+# -----------------------------------------------------------------------------
+# 1. Pre-flight checks & auto-fixes
+# -----------------------------------------------------------------------------
+check_terraform_vars
+
+# -----------------------------------------------------------------------------
+# 2. Terraform init & plan
 # -----------------------------------------------------------------------------
 log_info "Running terraform init..."
 terraform_init
 log_success "Terraform init complete"
+
+# Check for stale locks and unlock if needed
+check_and_unlock_state
+
+# Check and fix secrets after init (needs terraform state)
+check_and_fix_secrets
 
 log_info "Running terraform plan..."
 terraform plan -out=tfplan
@@ -147,7 +269,7 @@ terraform output -json > terraform-outputs.json
 log_success "Outputs saved to terraform-outputs.json"
 
 # -----------------------------------------------------------------------------
-# 2. Sync outputs into .env.prod-ecs
+# 3. Sync outputs into .env.prod-ecs
 # -----------------------------------------------------------------------------
 ensure_env_file
 
@@ -188,7 +310,7 @@ fi
 log_success "Placeholder sync complete"
 
 # -----------------------------------------------------------------------------
-# 3. Upload to AWS Secrets Manager
+# 4. Upload to AWS Secrets Manager
 # -----------------------------------------------------------------------------
 if [[ "${UPLOAD_SECRETS}" == "false" || "${UPLOAD_SECRETS}" == "FALSE" ]]; then
     log_warn "UPLOAD_SECRETS=false, skipping Secrets Manager upload"
