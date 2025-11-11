@@ -127,10 +127,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # REST Framework configuration
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
-        'question_service.authentication.LenientSessionAuthentication',
-    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [],  # Disable authentication
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
@@ -142,12 +139,6 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
-
-# In local development allow anonymous access to make testing easier
-if DEBUG:
-    REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] = [
-        'rest_framework.permissions.AllowAny'
-    ]
 
 # Make trailing slashes optional by auto-appending
 APPEND_SLASH = True
