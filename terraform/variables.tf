@@ -506,6 +506,21 @@ variable "kafka_topic_session_end" {
   default     = "session.end"
 }
 
+# Service path prefixes used behind the ALB and by each container
+variable "service_prefix_overrides" {
+  description = "Map of service names to the HTTP prefix mounted on the ALB (e.g. /matching-service-api)"
+  type        = map(string)
+  default = {
+    "user-service"          = "/user-service-api"
+    "question-service"      = "/question-service-api"
+    "matching-service"      = "/matching-service-api"
+    "session-service"       = "/session-service-api"
+    "execution-service"     = "/execution-service-api"
+    "collaboration-service" = "/collaboration-service-api"
+    "chat-service"          = "/chat-service-api"
+  }
+}
+
 # =============================================================================
 # Judge0 Configuration Variables
 # =============================================================================

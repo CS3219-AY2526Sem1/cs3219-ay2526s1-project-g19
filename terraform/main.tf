@@ -488,11 +488,13 @@ module "ecs_service_user" {
   desired_count    = var.user_service_desired_count
 
   # Environment Variables - Fetched from AWS Secrets Manager
-  environment_variables = {
-    AWS_SECRET_NAME         = aws_secretsmanager_secret.ecs_env.name
-    AWS_REGION              = var.aws_region
-    SERVICE_PREFIX_OVERRIDE = "/matching-service-api"
-  }
+  environment_variables = merge(
+    {
+      AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
+      AWS_REGION      = var.aws_region
+    },
+    try({ SERVICE_PREFIX_OVERRIDE = var.service_prefix_overrides["user-service"] }, {})
+  )
 
   # IAM Roles
   task_execution_role_arn = module.ecs_cluster.task_execution_role_arn
@@ -542,11 +544,13 @@ module "ecs_service_question" {
   desired_count    = var.question_service_desired_count
 
   # Environment Variables - Fetched from AWS Secrets Manager
-  environment_variables = {
-    AWS_SECRET_NAME         = aws_secretsmanager_secret.ecs_env.name
-    AWS_REGION              = var.aws_region
-    SERVICE_PREFIX_OVERRIDE = "/session-service-api"
-  }
+  environment_variables = merge(
+    {
+      AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
+      AWS_REGION      = var.aws_region
+    },
+    try({ SERVICE_PREFIX_OVERRIDE = var.service_prefix_overrides["question-service"] }, {})
+  )
 
   # IAM Roles
   task_execution_role_arn = module.ecs_cluster.task_execution_role_arn
@@ -596,11 +600,13 @@ module "ecs_service_matching" {
   desired_count    = var.matching_service_desired_count
 
   # Environment Variables - Fetched from AWS Secrets Manager
-  environment_variables = {
-    AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
-    AWS_REGION      = var.aws_region
-    SERVICE_PREFIX_OVERRIDE = "/matching-service-api"
-  }
+  environment_variables = merge(
+    {
+      AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
+      AWS_REGION      = var.aws_region
+    },
+    try({ SERVICE_PREFIX_OVERRIDE = var.service_prefix_overrides["matching-service"] }, {})
+  )
 
   # IAM Roles
   task_execution_role_arn = module.ecs_cluster.task_execution_role_arn
@@ -650,10 +656,13 @@ module "ecs_service_session" {
   desired_count    = var.session_service_desired_count
 
   # Environment Variables - Fetched from AWS Secrets Manager
-  environment_variables = {
-    AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
-    AWS_REGION      = var.aws_region
-  }
+  environment_variables = merge(
+    {
+      AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
+      AWS_REGION      = var.aws_region
+    },
+    try({ SERVICE_PREFIX_OVERRIDE = var.service_prefix_overrides["session-service"] }, {})
+  )
 
   # IAM Roles
   task_execution_role_arn = module.ecs_cluster.task_execution_role_arn
@@ -703,10 +712,13 @@ module "ecs_service_collaboration" {
   desired_count    = var.collaboration_service_desired_count
 
   # Environment Variables - Fetched from AWS Secrets Manager
-  environment_variables = {
-    AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
-    AWS_REGION      = var.aws_region
-  }
+  environment_variables = merge(
+    {
+      AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
+      AWS_REGION      = var.aws_region
+    },
+    try({ SERVICE_PREFIX_OVERRIDE = var.service_prefix_overrides["collaboration-service"] }, {})
+  )
 
   # IAM Roles
   task_execution_role_arn = module.ecs_cluster.task_execution_role_arn
@@ -756,10 +768,13 @@ module "ecs_service_chat" {
   desired_count    = var.chat_service_desired_count
 
   # Environment Variables - Fetched from AWS Secrets Manager
-  environment_variables = {
-    AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
-    AWS_REGION      = var.aws_region
-  }
+  environment_variables = merge(
+    {
+      AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
+      AWS_REGION      = var.aws_region
+    },
+    try({ SERVICE_PREFIX_OVERRIDE = var.service_prefix_overrides["chat-service"] }, {})
+  )
 
   # IAM Roles
   task_execution_role_arn = module.ecs_cluster.task_execution_role_arn
@@ -809,10 +824,13 @@ module "ecs_service_execution" {
   desired_count    = var.execution_service_desired_count
 
   # Environment Variables - Fetched from AWS Secrets Manager
-  environment_variables = {
-    AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
-    AWS_REGION      = var.aws_region
-  }
+  environment_variables = merge(
+    {
+      AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
+      AWS_REGION      = var.aws_region
+    },
+    try({ SERVICE_PREFIX_OVERRIDE = var.service_prefix_overrides["execution-service"] }, {})
+  )
 
   # IAM Roles
   task_execution_role_arn = module.ecs_cluster.task_execution_role_arn
