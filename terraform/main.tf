@@ -599,6 +599,7 @@ module "ecs_service_matching" {
   environment_variables = {
     AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
     AWS_REGION      = var.aws_region
+    SERVICE_PREFIX_OVERRIDE = "/matching-service-api"
   }
 
   # IAM Roles
