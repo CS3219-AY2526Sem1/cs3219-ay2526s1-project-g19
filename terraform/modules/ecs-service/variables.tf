@@ -65,6 +65,12 @@ variable "container_memory" {
   default     = 512
 }
 
+variable "container_health_check_path" {
+  description = "HTTP path the container health check should query (must include leading /)"
+  type        = string
+  default     = "/health"
+}
+
 # Environment Variables
 variable "environment_variables" {
   description = "Map of environment variables for the container"

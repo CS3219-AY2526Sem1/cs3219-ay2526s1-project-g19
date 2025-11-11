@@ -49,7 +49,7 @@ resource "aws_ecs_task_definition" "main" {
       }
 
       healthCheck = {
-        command     = ["CMD-SHELL", "python - <<'PY'\nimport sys,urllib.request\ntry:\n  r=urllib.request.urlopen('http://127.0.0.1:${var.container_port}/health', timeout=2)\n  sys.exit(0 if r.getcode()==200 else 1)\nexcept Exception:\n  sys.exit(1)\nPY"]
+        command     = ["CMD-SHELL", "python - <<'PY'\nimport sys,urllib.request\ntry:\n  r=urllib.request.urlopen('http://127.0.0.1:${var.container_port}${var.container_health_check_path}', timeout=2)\n  sys.exit(0 if r.getcode()==200 else 1)\nexcept Exception:\n  sys.exit(1)\nPY"]
         interval    = 30
         timeout     = 5
         retries     = 3

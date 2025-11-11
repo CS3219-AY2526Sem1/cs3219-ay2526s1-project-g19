@@ -1137,6 +1137,7 @@ module "ecs_service_schema_registry" {
   container_port   = 8081
   container_cpu    = var.schema_registry_cpu
   container_memory = var.schema_registry_memory
+  container_health_check_path = "/subjects"
   desired_count    = 1
 
   # Environment Variables - Schema Registry Configuration
