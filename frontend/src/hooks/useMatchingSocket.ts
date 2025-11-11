@@ -36,10 +36,11 @@ export const useMatchingSocket = () => {
       try {
         const ws = matchingService.createWebSocket();
         wsRef.current = ws;
+        let connectionConfirmed = false;
 
         const timeout = setTimeout(() => {
-          if (ws.readyState !== WebSocket.OPEN) {
-            console.error('WebSocket connection timeout');
+          if (!connectionConfirmed) {
+            console.error('WebSocket connection timeout - no confirmation received');
             setError('Connection timeout');
             ws.close();
             wsRef.current = null;
@@ -48,15 +49,24 @@ export const useMatchingSocket = () => {
         }, 10000);
 
         ws.onopen = () => {
-          clearTimeout(timeout);
-          console.log('WebSocket connected successfully');
-          setError(null);
-          resolve(true);
+          console.log('WebSocket opened, waiting for server confirmation...');
         };
 
         ws.onmessage = (event) => {
           console.log('WebSocket message received:', event.data);
           const message: WebSocketMessage = JSON.parse(event.data);
+
+          // Handle connection confirmation from server
+          if (message.type === 'connection' && message.status === 'connected') {
+            if (!connectionConfirmed) {
+              connectionConfirmed = true;
+              clearTimeout(timeout);
+              console.log('WebSocket connection confirmed by server');
+              setError(null);
+              resolve(true);
+            }
+            return;
+          }
 
           if (message.status === 'success' && message.session) {
             setMatchFound(true);
@@ -75,13 +85,18 @@ export const useMatchingSocket = () => {
           console.error('WebSocket error:', event);
           setError('WebSocket connection error');
           wsRef.current = null;
-          resolve(false);
+          if (!connectionConfirmed) {
+            resolve(false);
+          }
         };
 
         ws.onclose = (event) => {
           clearTimeout(timeout);
           console.log('WebSocket closed:', event.code, event.reason);
           wsRef.current = null;
+          if (!connectionConfirmed) {
+            resolve(false);
+          }
         };
 
       } catch (error) {
@@ -131,18 +146,7 @@ export const useMatchingSocket = () => {
         return;
       }
 
-      // Give a small delay to ensure connection is stable
-      await new Promise(resolve => setTimeout(resolve, 200));
-
-      // Double-check WebSocket is still open
-      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-        console.error('WebSocket closed before joining queue');
-        setError('WebSocket connection lost');
-        setIsMatching(false);
-        return;
-      }
-
-      // Join queue 
+      // Join queue (server confirmation ensures connection is ready)
       console.log('Joining queue via API...');
       await matchingService.addToQueue(criteria);
       console.log('Successfully joined queue');

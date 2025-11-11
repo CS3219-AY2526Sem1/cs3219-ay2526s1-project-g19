@@ -95,12 +95,22 @@ async def match_users(
     criteria: MatchingCriteriaSchema,
     user_id=Depends(get_current_user)
 ):
-    # check if ws connection is set up
-    if not websocket_service.check_ws_connection(user_id=user_id):
+    # Check if ws connection is set up with retry for race condition
+    max_retries = 3
+    retry_delay = 0.1  # 100ms
+
+    for attempt in range(max_retries):
+        if websocket_service.check_ws_connection(user_id=user_id):
+            break
+        if attempt < max_retries - 1:
+            await asyncio.sleep(retry_delay)
+    else:
+        # All retries failed
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="WebSocket connection required. Please connect to WebSocket before joining queue."
         )
+
     res = await matching_service.match_user(
         user_id=user_id,
         criteria=criteria
@@ -134,8 +144,10 @@ async def websocket_endpoint(websocket: WebSocket):
     if not user_id:
         return
     logger.info(f"Connecting ws for {user_id}")
-    websocket_service.record_ws_connection(user_id=user_id, websocket=websocket)
     await websocket.accept()
+    websocket_service.record_ws_connection(user_id=user_id, websocket=websocket)
+    # Send connection confirmation to client
+    await websocket.send_json({"type": "connection", "status": "connected"})
     try:
         while True:
             try:

@@ -35,7 +35,8 @@ export interface SessionData {
 }
 
 export interface WebSocketMessage {
-  status: 'success' | 'timeout' | 'relax';
-  session: SessionData | null;
+  type?: 'connection';  // Connection confirmation message
+  status: 'success' | 'timeout' | 'relax' | 'connected';
+  session?: SessionData | null;
   message?: string; // Error messages
 }
