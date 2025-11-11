@@ -68,4 +68,13 @@ variable "notification_topic_arn" {
 }
 
 variable "alarm_actions" {
-  description = "List of alarm action ARNs for 
+  description = "List of alarm action ARNs for CloudWatch alarms"
+  type        = list(string)
+  default     = []
+}
+
+variable "tags" {
+  description = "Tags to apply to all resources"
+  type        = map(string)
+  default     = {}
+}

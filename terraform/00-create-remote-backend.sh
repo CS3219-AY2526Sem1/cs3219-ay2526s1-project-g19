@@ -7,6 +7,9 @@
 # every developer/CI job can share the same backend.
 # =============================================================================
 
+#   export TERRAFORM_STATE_BUCKET=cs3219-g19-terraform-state
+#   export TERRAFORM_STATE_REGION=ap-southeast-1
+#   export TERRAFORM_STATE_DYNAMODB_TABLE=cs3219-g19-terraform-locks
 set -euo pipefail
 
 INFO_COLOR='\033[0;34m'

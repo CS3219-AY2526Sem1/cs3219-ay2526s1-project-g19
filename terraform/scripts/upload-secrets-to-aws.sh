@@ -67,6 +67,19 @@ if [[ $file_size -gt 65536 ]]; then
     exit 1
 fi
 
+# Check if secret is scheduled for deletion and force delete it
+if aws secretsmanager describe-secret \
+    --secret-id "$SECRET_NAME" \
+    --region "$AWS_REGION" 2>&1 | grep -q "scheduled for deletion"; then
+    log_info "Secret is scheduled for deletion. Force deleting to recreate..."
+    aws secretsmanager delete-secret \
+        --secret-id "$SECRET_NAME" \
+        --region "$AWS_REGION" \
+        --force-delete-without-recovery &> /dev/null || true
+    sleep 3
+    log_success "Secret force deleted"
+fi
+
 if aws secretsmanager describe-secret \
     --secret-id "$SECRET_NAME" \
     --region "$AWS_REGION" \

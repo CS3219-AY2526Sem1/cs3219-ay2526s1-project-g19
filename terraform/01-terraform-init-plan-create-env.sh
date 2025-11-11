@@ -156,11 +156,14 @@ check_and_fix_secrets() {
 
     log_info "Checking Secrets Manager state..."
 
-    # Check if secret exists and is scheduled for deletion
-    if aws secretsmanager describe-secret \
+    # Check if secret exists and capture the full output
+    local describe_output
+    describe_output=$(aws secretsmanager describe-secret \
         --secret-id "$secret_name" \
-        --region "$AWS_REGION" 2>&1 | grep -q "scheduled for deletion"; then
+        --region "$AWS_REGION" 2>&1 || true)
 
+    # Check if secret is scheduled for deletion using JSON query
+    if echo "$describe_output" | grep -q "DeletedDate"; then
         log_warn "Secret is scheduled for deletion. Force deleting to recreate..."
         aws secretsmanager delete-secret \
             --secret-id "$secret_name" \
@@ -168,36 +171,37 @@ check_and_fix_secrets() {
             --force-delete-without-recovery >/dev/null 2>&1 || true
 
         sleep 3
-        log_success "Secret deleted. Will be recreated."
+        log_success "Secret force deleted. Will be recreated by Terraform."
 
-    # Check if secret exists but not in Terraform state
-    elif aws secretsmanager describe-secret \
-        --secret-id "$secret_name" \
-        --region "$AWS_REGION" >/dev/null 2>&1; then
-
+    # Check if secret exists (and is not scheduled for deletion)
+    elif echo "$describe_output" | grep -q "ARN"; then
         if ! terraform state show aws_secretsmanager_secret.ecs_env >/dev/null 2>&1; then
             log_warn "Secret exists but not in Terraform state. Importing..."
-            terraform import aws_secretsmanager_secret.ecs_env "$secret_name" || true
+            if terraform import aws_secretsmanager_secret.ecs_env "$secret_name" 2>&1; then
+                # Import version too
+                local version_id=$(aws secretsmanager get-secret-value \
+                    --secret-id "$secret_name" \
+                    --region "$AWS_REGION" \
+                    --query 'VersionId' \
+                    --output text 2>/dev/null || echo "")
 
-            # Import version too
-            local version_id=$(aws secretsmanager get-secret-value \
-                --secret-id "$secret_name" \
-                --region "$AWS_REGION" \
-                --query 'VersionId' \
-                --output text 2>/dev/null)
+                local secret_arn=$(aws secretsmanager describe-secret \
+                    --secret-id "$secret_name" \
+                    --region "$AWS_REGION" \
+                    --query 'ARN' \
+                    --output text 2>/dev/null || echo "")
 
-            local secret_arn=$(aws secretsmanager describe-secret \
-                --secret-id "$secret_name" \
-                --region "$AWS_REGION" \
-                --query 'ARN' \
-                --output text 2>/dev/null)
+                if [[ -n "$version_id" && -n "$secret_arn" ]]; then
+                    terraform import aws_secretsmanager_secret_version.ecs_env "${secret_arn}|${version_id}" 2>&1 || true
+                fi
 
-            if [[ -n "$version_id" && -n "$secret_arn" ]]; then
-                terraform import aws_secretsmanager_secret_version.ecs_env "${secret_arn}|${version_id}" || true
+                log_success "Secret imported into Terraform state"
+            else
+                log_warn "Import failed, but continuing (Terraform will create the secret)"
             fi
-
-            log_success "Secret imported into Terraform state"
         fi
+    else
+        log_info "Secret does not exist. Terraform will create it."
     fi
 }
 
@@ -237,11 +241,11 @@ log_info "Running terraform init..."
 terraform_init
 log_success "Terraform init complete"
 
+# Check and fix secrets BEFORE checking locks (to prevent import errors)
+check_and_fix_secrets
+
 # Check for stale locks and unlock if needed
 check_and_unlock_state
-
-# Check and fix secrets after init (needs terraform state)
-check_and_fix_secrets
 
 log_info "Running terraform plan..."
 terraform plan -out=tfplan
