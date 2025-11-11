@@ -73,7 +73,7 @@ RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
     echo '' >> /docker-entrypoint.sh && \
     echo '# Substitute environment variables in nginx config' >> /docker-entrypoint.sh && \
     echo 'echo "Substituting environment variables in nginx configuration..."' >> /docker-entrypoint.sh && \
-    echo 'envsubst "$NGINX_USER_SERVICE_HOST $NGINX_QUESTION_SERVICE_HOST $NGINX_MATCHING_SERVICE_HOST $NGINX_HISTORY_SERVICE_HOST $NGINX_SESSION_SERVICE_HOST $NGINX_COLLABORATION_SERVICE_HOST $NGINX_CHAT_SERVICE_HOST $NGINX_EXECUTION_SERVICE_HOST" < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf' >> /docker-entrypoint.sh && \
+    echo 'envsubst '"'"'${NGINX_USER_SERVICE_HOST} ${NGINX_QUESTION_SERVICE_HOST} ${NGINX_MATCHING_SERVICE_HOST} ${NGINX_HISTORY_SERVICE_HOST} ${NGINX_SESSION_SERVICE_HOST} ${NGINX_COLLABORATION_SERVICE_HOST} ${NGINX_CHAT_SERVICE_HOST} ${NGINX_EXECUTION_SERVICE_HOST}'"'"' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf' >> /docker-entrypoint.sh && \
     echo '' >> /docker-entrypoint.sh && \
     echo '# Display the generated config for debugging' >> /docker-entrypoint.sh && \
     echo 'echo "Generated nginx configuration:"' >> /docker-entrypoint.sh && \

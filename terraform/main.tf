@@ -858,10 +858,17 @@ module "ecs_service_frontend" {
   container_memory = var.frontend_memory
   desired_count    = var.frontend_desired_count
 
-  # Environment Variables - Fetched from AWS Secrets Manager
+  # Environment Variables - Frontend nginx configuration
+  # Note: Frontend uses nginx and needs service hostnames for proxying
   environment_variables = {
-    AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
-    AWS_REGION      = var.aws_region
+    NGINX_USER_SERVICE_HOST          = "user-service.${module.service_discovery.namespace_name}"
+    NGINX_QUESTION_SERVICE_HOST      = "question-service.${module.service_discovery.namespace_name}"
+    NGINX_MATCHING_SERVICE_HOST      = "matching-service.${module.service_discovery.namespace_name}"
+    NGINX_HISTORY_SERVICE_HOST       = "session-service.${module.service_discovery.namespace_name}"
+    NGINX_SESSION_SERVICE_HOST       = "session-service.${module.service_discovery.namespace_name}"
+    NGINX_COLLABORATION_SERVICE_HOST = "collaboration-service.${module.service_discovery.namespace_name}"
+    NGINX_CHAT_SERVICE_HOST          = "chat-service.${module.service_discovery.namespace_name}"
+    NGINX_EXECUTION_SERVICE_HOST     = "execution-service.${module.service_discovery.namespace_name}"
   }
 
   # IAM Roles
@@ -1068,13 +1075,13 @@ module "ecs_service_kafka" {
     # KRaft mode configuration (no Zookeeper)
     KAFKA_NODE_ID                       = "1"
     KAFKA_PROCESS_ROLES                 = "broker,controller"
-    KAFKA_CONTROLLER_QUORUM_VOTERS      = "1@kafka.peerprep-prod.local:29093"
+    KAFKA_CONTROLLER_QUORUM_VOTERS      = "1@kafka.${module.service_discovery.namespace_name}:29093"
     KAFKA_CONTROLLER_LISTENER_NAMES     = "CONTROLLER"
     CLUSTER_ID                          = "aOge9G1DRLKAe03PP99tXQ"
 
     # Listener configuration
     KAFKA_LISTENERS                     = "PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093"
-    KAFKA_ADVERTISED_LISTENERS          = "PLAINTEXT://kafka.peerprep-prod.local:29092"
+    KAFKA_ADVERTISED_LISTENERS          = "PLAINTEXT://kafka.${module.service_discovery.namespace_name}:29092"
     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP = "PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT"
     KAFKA_INTER_BROKER_LISTENER_NAME    = "PLAINTEXT"
 
@@ -1132,10 +1139,15 @@ module "ecs_service_schema_registry" {
   container_memory = var.schema_registry_memory
   desired_count    = 1
 
-  # Environment Variables - Fetched from AWS Secrets Manager
+  # Environment Variables - Schema Registry Configuration
+  # Note: Official Confluent image doesn't support our custom secrets fetcher,
+  # so we provide the minimal required config directly
   environment_variables = {
-    AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
-    AWS_REGION      = var.aws_region
+    SCHEMA_REGISTRY_HOST_NAME                    = "schema-registry.${module.service_discovery.namespace_name}"
+    SCHEMA_REGISTRY_LISTENERS                    = "http://0.0.0.0:8081"
+    SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS = "kafka.${module.service_discovery.namespace_name}:29092"
+    SCHEMA_REGISTRY_KAFKASTORE_TOPIC             = "_schemas"
+    SCHEMA_REGISTRY_DEBUG                        = "false"
   }
 
   # IAM Roles
