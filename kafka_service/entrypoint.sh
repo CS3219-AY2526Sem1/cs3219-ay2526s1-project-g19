@@ -1,7 +1,20 @@
 #!/bin/bash
 set -e
 
-echo "[Kafka] Starting Kafka KRaft setup (v3)..."
+echo "[Kafka] Starting Kafka KRaft setup (v4)..."
+
+# Clean up stale lock file if it exists
+LOCK_FILE="${KAFKA_LOG_DIRS}/.lock"
+if [ -f "$LOCK_FILE" ]; then
+    echo "[Kafka] Found existing lock file at $LOCK_FILE"
+    # Check if any process is holding the lock
+    if ! fuser "$LOCK_FILE" 2>/dev/null; then
+        echo "[Kafka] Removing stale lock file (no process holding it)"
+        rm -f "$LOCK_FILE"
+    else
+        echo "[Kafka] Lock file is in use by another process - this might indicate a problem"
+    fi
+fi
 
 # Format storage if not already formatted
 if [ ! -f "${KAFKA_LOG_DIRS}/meta.properties" ]; then
