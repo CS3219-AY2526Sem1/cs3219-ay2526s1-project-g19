@@ -41,7 +41,7 @@ async def run_migrations_online() -> None:
     """Run migrations in 'online' mode with AsyncEngine."""
     connectable = create_async_engine(
         settings.pg_url,
-        connect_args={"ssl": settings.async_ssl_context()},
+        connect_args={"ssl": settings.async_ssl_context},
         poolclass=pool.NullPool
     )
 
