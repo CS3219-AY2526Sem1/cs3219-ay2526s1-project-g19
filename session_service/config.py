@@ -42,13 +42,6 @@ class Settings(BaseSettings):
                 url += f"?sslmode={sslmode}"
         return url
 
-    def _ssl_query(self) -> str | None:
-        mode = (self.session_db_ssl_mode or "").strip()
-        logger.info(f"sslmode: {mode}")
-        if not mode:
-            return None
-        return f"sslmode={mode}"
-
     @property
     def pg_url(self) -> str:
         return self._build_pg_url("asyncpg", include_sslmode=False)
