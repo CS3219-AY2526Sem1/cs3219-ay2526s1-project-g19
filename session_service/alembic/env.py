@@ -23,7 +23,7 @@ target_metadata = SQLModel.metadata
 # ------------------------
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode (no DB connection)."""
-    url = settings.pg_url.replace("+asyncpg", "+psycopg2")  # offline needs sync driver
+    url = settings.pg_sync_url  # offline needs sync driver
     context.configure(
         url=url,
         target_metadata=target_metadata,

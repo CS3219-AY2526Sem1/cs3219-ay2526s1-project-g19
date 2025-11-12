@@ -26,14 +26,38 @@ class Settings(BaseSettings):
     # jwt decode
     secret_key: str
 
-    @property
-    def pg_url(self) -> str:
-        return (
-            f"postgresql+asyncpg://{self.session_db_user}:"
+    def _build_pg_url(self, driver: str, query_param: str | None) -> str:
+        url = (
+            f"postgresql+{driver}://{self.session_db_user}:"
             f"{self.session_db_password}@{self.session_db_host}:"
             f"{self.session_db_port}/{self.session_db_name}"
-            f"?sslmode={self.session_db_ssl_mode}"
         )
+        if query_param:
+            return f"{url}?{query_param}"
+        return url
+
+    def _async_ssl_query(self) -> str | None:
+        mode = (self.session_db_ssl_mode or "").strip().lower()
+        if not mode:
+            return None
+        if mode == "disable":
+            return "ssl=false"
+        # asyncpg only supports toggling SSL on/off via "ssl" flag
+        return "ssl=true"
+
+    def _sync_ssl_query(self) -> str | None:
+        mode = (self.session_db_ssl_mode or "").strip()
+        if not mode:
+            return None
+        return f"sslmode={mode}"
+
+    @property
+    def pg_url(self) -> str:
+        return self._build_pg_url("asyncpg", self._async_ssl_query())
+
+    @property
+    def pg_sync_url(self) -> str:
+        return self._build_pg_url("psycopg2", self._sync_ssl_query())
 
 
 settings = Settings()
