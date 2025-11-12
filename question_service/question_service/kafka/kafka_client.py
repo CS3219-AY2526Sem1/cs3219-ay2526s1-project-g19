@@ -28,10 +28,32 @@ class KafkaClient:
                     if msg.error().code() != KafkaError._PARTITION_EOF:
                         logger.error(f"Kafka error: {msg.error()}")
                     continue
-                handler(msg)
+                key_preview = None
+                try:
+                    key_preview = msg.key().decode() if msg.key() else None
+                except Exception:
+                    key_preview = "<binary>"
+                logger.info(
+                    "Kafka message received topic=%s partition=%s offset=%s key=%s",
+                    msg.topic(),
+                    msg.partition(),
+                    msg.offset(),
+                    key_preview,
+                )
+                try:
+                    handler(msg)
+                except Exception:
+                    logger.exception(
+                        "Kafka message handler crashed for topic=%s partition=%s offset=%s",
+                        msg.topic(),
+                        msg.partition(),
+                        msg.offset(),
+                    )
+                    raise
         except KeyboardInterrupt:
             logger.info("Stopping consumer...")
         finally:
+            logger.info("Kafka consumer closing subscription...")
             self.consumer.close()
 
 

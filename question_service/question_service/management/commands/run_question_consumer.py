@@ -8,4 +8,11 @@ class Command(BaseCommand):
     help = "Runs Kafka consumer for question service"
 
     def handle(self, *args, **options):
-        match_found_consumer.listen()
+        logger.info("Question consumer starting up...")
+        try:
+            match_found_consumer.listen()
+        except Exception:
+            logger.exception("Question consumer crashed unexpectedly.")
+            raise
+        finally:
+            logger.info("Question consumer shutting down.")
