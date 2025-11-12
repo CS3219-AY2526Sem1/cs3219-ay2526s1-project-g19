@@ -74,7 +74,7 @@ load_aws_secrets
 
 normalize_bool_var() {
     var_name=$1
-    value=$(printf '%s' "${!var_name}" | tr -d '\r' | tr '[:upper:]' '[:lower:]')
+    value=$(eval "printf '%s' \"\${$var_name:-}\"" | tr -d '\r' | tr '[:upper:]' '[:lower:]')
     case "$value" in
         true|1|yes|on)
             export "$var_name"=true
