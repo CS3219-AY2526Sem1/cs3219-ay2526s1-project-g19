@@ -88,6 +88,7 @@ app.include_router(router=router)
 
 if __name__=="__main__":
     logger.info("Starting session service...")
+    logger.info(settings.pg_url)
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
