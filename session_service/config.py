@@ -1,5 +1,8 @@
+import logging
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
+
+logger = logging.getLogger(__name__)
 
 
 class Settings(BaseSettings):
@@ -38,6 +41,7 @@ class Settings(BaseSettings):
 
     def _ssl_query(self) -> str | None:
         mode = (self.session_db_ssl_mode or "").strip()
+        logger.info(f"sslmode: {mode}")
         if not mode:
             return None
         return f"sslmode={mode}"
