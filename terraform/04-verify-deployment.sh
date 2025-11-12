@@ -45,6 +45,13 @@ INFRA_SERVICES=(
     "schema-registry"
 )
 
+CONSUMER_SERVICES=(
+    "session-consumer-question-chosen"
+    "session-consumer-session-end"
+    "matching-consumer-session-created"
+    "matching-consumer-topics-difficulties"
+)
+
 # Get ALB DNS
 if [ -f "terraform-outputs.json" ]; then
     ALB_DNS=$(cat terraform-outputs.json | jq -r '.alb_dns_name.value // empty')
@@ -222,6 +229,35 @@ if [ ${#INFRA_SERVICES[@]} -gt 0 ]; then
             fi
         else
             echo -e "${RED}✗${NC} $SERVICE: not found"
+            FAILED=1
+        fi
+    done
+    echo ""
+fi
+
+if [ ${#CONSUMER_SERVICES[@]} -gt 0 ]; then
+    echo -e "${BLUE}Kafka consumer services...${NC}"
+    for SERVICE_NAME in "${CONSUMER_SERVICES[@]}"; do
+        SERVICE_INFO=$(aws ecs describe-services \
+            --cluster "$CLUSTER_NAME" \
+            --services "$SERVICE_NAME" \
+            --region "$AWS_REGION" 2>/dev/null || echo "")
+
+        if [ -n "$SERVICE_INFO" ]; then
+            DESIRED=$(echo "$SERVICE_INFO" | jq -r '.services[0].desiredCount')
+            RUNNING=$(echo "$SERVICE_INFO" | jq -r '.services[0].runningCount')
+            STATUS=$(echo "$SERVICE_INFO" | jq -r '.services[0].status')
+
+            if [ "$STATUS" == "ACTIVE" ] && [ "$RUNNING" == "$DESIRED" ]; then
+                echo -e "${GREEN}✓${NC} $SERVICE_NAME: $RUNNING/$DESIRED tasks running"
+            elif [ "$STATUS" == "ACTIVE" ]; then
+                echo -e "${YELLOW}⚠${NC} $SERVICE_NAME: $RUNNING/$DESIRED tasks running (starting up...)"
+            else
+                echo -e "${RED}✗${NC} $SERVICE_NAME: Status=$STATUS, $RUNNING/$DESIRED tasks"
+                FAILED=1
+            fi
+        else
+            echo -e "${RED}✗${NC} $SERVICE_NAME: not found"
             FAILED=1
         fi
     done
