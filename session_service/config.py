@@ -76,6 +76,7 @@ class Settings(BaseSettings):
             sslmode = self._normalized_ssl_mode()
             if sslmode:
                 url += f"?sslmode={sslmode}"
+        logger.info(f"Forming db url: {url}")
         return url
 
     @property
