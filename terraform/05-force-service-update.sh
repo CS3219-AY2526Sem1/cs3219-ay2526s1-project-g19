@@ -36,6 +36,13 @@ SERVICES=(
     "schema-registry"
 )
 
+EXTRA_SERVICES=(
+    "session-consumer-question-chosen"
+    "session-consumer-session-end"
+    "matching-consumer-session-created"
+    "matching-consumer-topics-difficulties"
+)
+
 echo -e "${BLUE}Forcing service updates to pull latest images...${NC}"
 echo ""
 
@@ -53,6 +60,21 @@ for SERVICE in "${SERVICES[@]}"; do
         --output table
 
     echo -e "${GREEN}✓ Update triggered for $SERVICE${NC}"
+    echo ""
+done
+
+for SERVICE_NAME in "${EXTRA_SERVICES[@]}"; do
+    echo "Updating: $SERVICE_NAME"
+
+    aws ecs update-service \
+        --cluster "$CLUSTER_NAME" \
+        --service "$SERVICE_NAME" \
+        --force-new-deployment \
+        --region "$AWS_REGION" \
+        --query 'service.{Service:serviceName,Status:status,Running:runningCount,Desired:desiredCount}' \
+        --output table
+
+    echo -e "${GREEN}✓ Update triggered for $SERVICE_NAME${NC}"
     echo ""
 done
 

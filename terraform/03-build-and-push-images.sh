@@ -70,6 +70,13 @@ echo ""
 echo -e "${BLUE}[2/3] Building Docker Images...${NC}"
 cd "$(dirname "$0")/.."
 
+# Support optional --no-cache flag
+NO_CACHE_BUILD=0
+if [ "${1:-}" = "--no-cache" ]; then
+    NO_CACHE_BUILD=1
+    echo -e "${YELLOW}⚠ Running docker builds with --no-cache${NC}"
+fi
+
 # Loop through services
 for i in "${!SERVICE_NAMES[@]}"; do
     SERVICE_NAME="${SERVICE_NAMES[$i]}"
@@ -108,9 +115,11 @@ for i in "${!SERVICE_NAMES[@]}"; do
         )
     fi
 
-    docker build \
-        "${build_args[@]}" \
-        "$SERVICE_DIR"
+    if [ "$NO_CACHE_BUILD" -eq 1 ]; then
+        build_args+=(--no-cache)
+    fi
+
+    docker build "${build_args[@]}" "$SERVICE_DIR"
 
     echo -e "${GREEN}✓ Built $SERVICE_NAME${NC}"
 done
