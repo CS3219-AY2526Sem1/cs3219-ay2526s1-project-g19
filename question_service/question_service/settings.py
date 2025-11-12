@@ -91,21 +91,42 @@ if USE_SQLITE:
         }
     }
 else:
-    DATABASE_URL = config('DATABASE_URL', default=None)
+    DATABASE_URL = config('QUESTION_DATABASE_URL', default=None) or config('DATABASE_URL', default=None)
     if DATABASE_URL:
         import dj_database_url
         DATABASES = {
             'default': dj_database_url.parse(DATABASE_URL)
         }
     else:
+        db_name = (
+            config('QUESTION_DB_NAME', default=None)
+            or config('DB_NAME', default='question_db')
+        )
+        db_user = (
+            config('QUESTION_DB_USER', default=None)
+            or config('DB_USER', default='postgres')
+        )
+        db_password = (
+            config('QUESTION_DB_PASSWORD', default=None)
+            or config('DB_PASSWORD', default='postgres')
+        )
+        db_host = (
+            config('QUESTION_DB_HOST', default=None)
+            or config('DB_HOST', default='question_db')
+        )
+        db_port = (
+            config('QUESTION_DB_PORT', default=None)
+            or config('DB_PORT', default='5432')
+        )
+
         DATABASES = {
             'default': {
                 'ENGINE': 'django.db.backends.postgresql',
-                'NAME': config('DB_NAME', default='question_db'),
-                'USER': config('DB_USER', default='postgres'),
-                'PASSWORD': config('DB_PASSWORD', default='postgres'),
-                'HOST': config('DB_HOST', default='question_db'),
-                'PORT': config('DB_PORT', default='5432'),
+                'NAME': db_name,
+                'USER': db_user,
+                'PASSWORD': db_password,
+                'HOST': db_host,
+                'PORT': db_port,
             }
         }
 
