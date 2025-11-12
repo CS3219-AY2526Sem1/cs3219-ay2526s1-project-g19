@@ -25,7 +25,6 @@ on:
     types:
       - completed
     branches:
-      - master
       - prod/ecs-prod
 
 env:
