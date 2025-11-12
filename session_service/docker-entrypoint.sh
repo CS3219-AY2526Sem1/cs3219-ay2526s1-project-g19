@@ -87,9 +87,9 @@ for arg in "$@"; do
     esac
 done
 
-if [ "$is_consumer_command" = true ] && [ -z "$SKIP_DB_SETUP" ]; then
+if [ "$is_consumer_command" = true ] && [ "$SKIP_DB_SETUP" != "true" ]; then
     export SKIP_DB_SETUP=true
-    echo "[Config] Detected Kafka consumer command. Forcing SKIP_DB_SETUP=true."
+    echo "[Config] Detected Kafka consumer command. Forcing SKIP_DB_SETUP=true (was '${SKIP_DB_SETUP:-unset}')."
 fi
 
 # Register kafka schema registry schemas
