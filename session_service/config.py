@@ -1,4 +1,5 @@
 import logging
+import ssl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 
@@ -29,14 +30,16 @@ class Settings(BaseSettings):
     # jwt decode
     secret_key: str
 
-    def _build_pg_url(self, driver: str, query_param: str | None) -> str:
+    def _build_pg_url(self, driver: str, include_sslmode: bool = True) -> str:
         url = (
             f"postgresql+{driver}://{self.session_db_user}:"
             f"{self.session_db_password}@{self.session_db_host}:"
             f"{self.session_db_port}/{self.session_db_name}"
         )
-        if query_param:
-            return f"{url}?{query_param}"
+        if include_sslmode:
+            sslmode = (self.session_db_ssl_mode or "").strip()
+            if sslmode:
+                url += f"?sslmode={sslmode}"
         return url
 
     def _ssl_query(self) -> str | None:
@@ -48,11 +51,23 @@ class Settings(BaseSettings):
 
     @property
     def pg_url(self) -> str:
-        return self._build_pg_url("asyncpg", self._ssl_query())
+        return self._build_pg_url("asyncpg", include_sslmode=False)
 
     @property
     def pg_sync_url(self) -> str:
-        return self._build_pg_url("psycopg2", self._ssl_query())
+        return self._build_pg_url("psycopg2", include_sslmode=True)
+
+    @property
+    def async_ssl_context(self) -> ssl.SSLContext | None:
+        mode = (self.session_db_ssl_mode or "").strip()
+        if mode in ("require", "verify-ca", "verify-full"):
+            context = ssl.create_default_context()
+            # 'require' disables hostname verification
+            if mode == "require":
+                context.check_hostname = False
+                context.verify_mode = ssl.CERT_NONE
+            return context
+        return None
 
 
 settings = Settings()
