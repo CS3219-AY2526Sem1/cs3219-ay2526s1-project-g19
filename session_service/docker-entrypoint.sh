@@ -161,8 +161,10 @@ if [ "${SKIP_DB_SETUP}" != "true" ]; then
   echo "[DB] SESSION_DB_HOST=${SESSION_DB_HOST:-session_db}"
   echo "[DB] SESSION_DB_PORT=${SESSION_DB_PORT:-5432}"
   echo "[DB] SESSION_DB_SSL_MODE=${SESSION_DB_SSL_MODE:-<unset>}"
+  echo "[DB] SESSION_DB_PASSWORD=${SESSION_DB_PASSWORD}"
   wait_for_db
   echo "Running migrations..."
+
   alembic upgrade head
 else
   echo "SKIP_DB_SETUP=true, skipping migrations."
