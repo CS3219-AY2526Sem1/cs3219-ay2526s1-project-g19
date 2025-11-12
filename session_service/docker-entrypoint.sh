@@ -72,6 +72,35 @@ PY
 
 load_aws_secrets
 
+normalize_bool_var() {
+    var_name=$1
+    value=$(printf '%s' "${!var_name}" | tr -d '\r' | tr '[:upper:]' '[:lower:]')
+    case "$value" in
+        true|1|yes|on)
+            export "$var_name"=true
+            ;;
+        false|0|no|off)
+            export "$var_name"=false
+            ;;
+    esac
+}
+
+normalize_bool_var "SKIP_DB_SETUP"
+
+if [ -n "$SESSION_DB_SSL_MODE" ]; then
+    raw_mode=$SESSION_DB_SSL_MODE
+    cleaned_mode=$(printf '%s' "$raw_mode" | tr -d '\r' | tr '[:upper:]' '[:lower:]')
+    case "$cleaned_mode" in
+        disable|allow|prefer|require|verify-ca|verify-full)
+            export SESSION_DB_SSL_MODE=$cleaned_mode
+            ;;
+        *)
+            echo "[DB] ⚠ Invalid SESSION_DB_SSL_MODE='${raw_mode}', defaulting to 'require'"
+            export SESSION_DB_SSL_MODE=require
+            ;;
+    esac
+fi
+
 if [ -n "$SERVICE_PREFIX_OVERRIDE" ]; then
     export SERVICE_PREFIX="$SERVICE_PREFIX_OVERRIDE"
     echo "[Config] SERVICE_PREFIX overridden to $SERVICE_PREFIX"
