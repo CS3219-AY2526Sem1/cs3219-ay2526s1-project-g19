@@ -3,7 +3,6 @@ name: Build and Push to ECR
 on:
   push:
     branches:
-      - master  # Deploy on push to master
       - prod/ecs-prod  # Deploy on push to ECS production branch
   workflow_dispatch:  # Allow manual trigger from GitHub UI
     inputs:
@@ -167,22 +166,73 @@ jobs:
           echo "✓ Pushed ${{ matrix.name }}:$IMAGE_TAG"
           echo "✓ Pushed ${{ matrix.name }}:latest"
 
-  summary:
-    name: Build Summary
+  deploy:
+    name: Deploy to ECS
     runs-on: ubuntu-latest
     needs: [build-and-push, push-kafka-images]
+
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Force ECS service updates
+        run: |
+          CLUSTER_NAME="peerprep-prod-cluster"
+          SERVICES=(
+            "user-service"
+            "question-service"
+            "matching-service"
+            "session-service"
+            "execution-service"
+            "collaboration-service"
+            "chat-service"
+            "frontend"
+            "kafka"
+            "schema-registry"
+          )
+
+          echo "Forcing ECS service updates to pull latest images..."
+          echo ""
+
+          for SERVICE in "${SERVICES[@]}"; do
+            SERVICE_NAME="${{ env.ECR_REGISTRY_PREFIX }}-${SERVICE}"
+            echo "Updating: $SERVICE_NAME"
+
+            aws ecs update-service \
+              --cluster "$CLUSTER_NAME" \
+              --service "$SERVICE_NAME" \
+              --force-new-deployment \
+              --region ${{ env.AWS_REGION }} \
+              --query 'service.{Service:serviceName,Status:status,Running:runningCount,Desired:desiredCount}' \
+              --output table
+
+            echo "✓ Update triggered for $SERVICE"
+            echo ""
+          done
+
+          echo "All service updates triggered!"
+          echo "Services will now pull the latest images and restart (takes 2-3 minutes)"
+
+  summary:
+    name: Build and Deploy Summary
+    runs-on: ubuntu-latest
+    needs: [build-and-push, push-kafka-images, deploy]
     if: always()
 
     steps:
       - name: Generate summary
         run: |
-          echo "### Build and Push Summary" >> $GITHUB_STEP_SUMMARY
+          echo "### Build and Deploy Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- **Branch**: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Image Tag**: \`${{ github.event.inputs.tag || github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "#### Services Built:" >> $GITHUB_STEP_SUMMARY
+          echo "#### Services Built and Deployed:" >> $GITHUB_STEP_SUMMARY
           echo "- user-service" >> $GITHUB_STEP_SUMMARY
           echo "- question-service" >> $GITHUB_STEP_SUMMARY
           echo "- matching-service" >> $GITHUB_STEP_SUMMARY
@@ -194,4 +244,4 @@ jobs:
           echo "- kafka" >> $GITHUB_STEP_SUMMARY
           echo "- schema-registry" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Next: Deploy via Terraform workflow" >> $GITHUB_STEP_SUMMARY
+          echo "**Status**: ECS services are now pulling latest images and restarting" >> $GITHUB_STEP_SUMMARY
