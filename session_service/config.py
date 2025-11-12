@@ -36,16 +36,7 @@ class Settings(BaseSettings):
             return f"{url}?{query_param}"
         return url
 
-    def _async_ssl_query(self) -> str | None:
-        mode = (self.session_db_ssl_mode or "").strip().lower()
-        if not mode:
-            return None
-        if mode == "disable":
-            return "ssl=false"
-        # asyncpg only supports toggling SSL on/off via "ssl" flag
-        return "ssl=true"
-
-    def _sync_ssl_query(self) -> str | None:
+    def _ssl_query(self) -> str | None:
         mode = (self.session_db_ssl_mode or "").strip()
         if not mode:
             return None
@@ -53,11 +44,11 @@ class Settings(BaseSettings):
 
     @property
     def pg_url(self) -> str:
-        return self._build_pg_url("asyncpg", self._async_ssl_query())
+        return self._build_pg_url("asyncpg", self._ssl_query())
 
     @property
     def pg_sync_url(self) -> str:
-        return self._build_pg_url("psycopg2", self._sync_ssl_query())
+        return self._build_pg_url("psycopg2", self._ssl_query())
 
 
 settings = Settings()
