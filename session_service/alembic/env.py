@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from logging.config import fileConfig
 
 from sqlalchemy import pool
@@ -10,6 +11,7 @@ from config import settings
 
 # Alembic Config object
 config = context.config
+logger = logging.getLogger(__name__)
 
 # Setup Python logging
 if config.config_file_name is not None:
@@ -24,6 +26,7 @@ target_metadata = SQLModel.metadata
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode (no DB connection)."""
     url = settings.pg_sync_url  # offline needs sync driver
+    logger.info(f"sync url: {url}")
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -39,6 +42,7 @@ def run_migrations_offline() -> None:
 # ------------------------
 async def run_migrations_online() -> None:
     """Run migrations in 'online' mode with AsyncEngine."""
+    logger.info(f"async url: {settings.pg_url}")
     connectable = create_async_engine(
         settings.pg_url,
         connect_args={"ssl": settings.async_ssl_context},
