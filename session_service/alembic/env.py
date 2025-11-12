@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 from logging.config import fileConfig
 
@@ -11,6 +12,11 @@ from config import settings
 
 # Alembic Config object
 config = context.config
+
+# Logger configs
+with open("log_config.json", "r") as f:
+    config = json.load(f)
+logging.config.dictConfig(config)
 logger = logging.getLogger(__name__)
 
 # Setup Python logging
