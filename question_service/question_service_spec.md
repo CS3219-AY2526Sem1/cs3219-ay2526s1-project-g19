@@ -2,7 +2,7 @@
 
 ## Database Schema
 
-### Questions Table (as implemented)
+### Questions Table
 
 ```sql
 CREATE TABLE questions (
