@@ -93,6 +93,8 @@ resource "aws_ecs_task_definition" "main" {
         retries     = var.container_health_check_retries
         startPeriod = var.container_health_check_start_period
       }
+
+      stopTimeout = var.stop_timeout
     }
   ])
 

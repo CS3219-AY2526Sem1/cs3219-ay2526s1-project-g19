@@ -1186,6 +1186,9 @@ module "ecs_service_kafka" {
   enable_service_discovery      = true
   service_discovery_service_arn = module.service_discovery.service_discovery_services["kafka"]
 
+  # Graceful shutdown timeout (2 minutes for Kafka to flush and commit)
+  stop_timeout = 120
+
   # Ensure EFS is created before Kafka service
   depends_on = [module.efs_kafka]
 

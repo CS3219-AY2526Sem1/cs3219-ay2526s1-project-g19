@@ -217,3 +217,15 @@ variable "efs_volume_configuration" {
   })
   default = null
 }
+
+variable "stop_timeout" {
+  description = "Time to wait for container to stop gracefully before force killing (seconds)"
+  type        = number
+  default     = 30
+}
+
+variable "enable_execute_command" {
+  description = "Enable ECS Exec for debugging"
+  type        = bool
+  default     = false
+}
