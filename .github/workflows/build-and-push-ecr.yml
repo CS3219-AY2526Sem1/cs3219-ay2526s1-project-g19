@@ -12,8 +12,8 @@ on:
         default: ''
 
 env:
-  AWS_REGION: us-east-1
-  ECR_REGISTRY_PREFIX: peerprep-production
+  AWS_REGION: ap-southeast-1
+  ECR_REGISTRY_PREFIX: peerprep-prod
 
 jobs:
   build-and-push:
