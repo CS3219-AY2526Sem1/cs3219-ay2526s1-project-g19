@@ -90,6 +90,49 @@ url_encode_password() {
     python3 -c "import urllib.parse; print(urllib.parse.quote('$password', safe=''))"
 }
 
+get_tfvar_value() {
+    local key=$1
+    python3 - "$key" <<'PY'
+import sys
+
+key = sys.argv[1]
+try:
+    with open("terraform.tfvars", "r", encoding="utf-8") as fh:
+        for raw in fh:
+            stripped = raw.strip()
+            if not stripped or stripped.startswith("#") or "=" not in raw:
+                continue
+            lhs, rhs = (part.strip() for part in raw.split("=", 1))
+            if lhs != key:
+                continue
+            rhs = rhs.strip()
+            if not rhs:
+                print("", end="")
+                break
+
+            if rhs[0] == '"':
+                value_chars = []
+                escaped = False
+                for ch in rhs[1:]:
+                    if ch == '"' and not escaped:
+                        break
+                    if ch == "\\" and not escaped:
+                        escaped = True
+                        continue
+                    value_chars.append(ch)
+                    escaped = False
+                print("".join(value_chars), end="")
+                break
+
+            # Unquoted value - strip inline comments
+            value = rhs.split("#", 1)[0].strip()
+            print(value, end="")
+            break
+except FileNotFoundError:
+    pass
+PY
+}
+
 get_output() {
     local key=$1
     jq -r --arg key "$key" '.[$key].value // empty' terraform-outputs.json
@@ -294,9 +337,25 @@ SESSION_DB=$(get_output "rds_session_endpoint")
 MATCHING_REDIS=$(get_output "redis_matching_endpoint")
 COLLAB_REDIS=$(get_output "redis_collaboration_endpoint")
 CHAT_REDIS=$(get_output "redis_chat_endpoint")
+SESSION_DB_SSL_MODE=${SESSION_DB_SSL_MODE:-require}
 
-# Get database password from terraform.tfvars
-DB_PASSWORD=$(grep "^db_password" terraform.tfvars | sed 's/.*=\s*"\(.*\)"/\1/')
+# Get database credentials from terraform.tfvars and variables.tf
+DB_PASSWORD=$(get_tfvar_value "db_password")
+DB_USERNAME=$(get_tfvar_value "db_username")
+
+# If username not in tfvars, use default from variables.tf
+if [[ -z "$DB_USERNAME" ]]; then
+    DB_USERNAME="peerprep_admin"
+fi
+
+# Generate SECRET_KEY if not already set
+SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_urlsafe(50))" 2>/dev/null || openssl rand -base64 50 2>/dev/null || echo "")
+
+# Generate Kafka credentials (for self-hosted Kafka/Schema Registry)
+SCHEMA_REGISTRY_KEY=$(python3 -c "import secrets; print(secrets.token_urlsafe(32))" 2>/dev/null || openssl rand -base64 32 2>/dev/null || echo "")
+SCHEMA_REGISTRY_SECRET=$(python3 -c "import secrets; print(secrets.token_urlsafe(32))" 2>/dev/null || openssl rand -base64 32 2>/dev/null || echo "")
+SASL_USERNAME="peerprep_kafka"
+SASL_PASSWORD=$(python3 -c "import secrets; print(secrets.token_urlsafe(32))" 2>/dev/null || openssl rand -base64 32 2>/dev/null || echo "")
 
 replace_placeholder "CHANGEME_NAMESPACE" "$NAMESPACE"
 replace_placeholder "CHANGEME_ALB_DNS_NAME" "$ALB_DNS"
@@ -307,6 +366,28 @@ replace_placeholder "CHANGEME_RDS_SESSION_ENDPOINT" "$SESSION_DB"
 replace_placeholder "CHANGEME_ELASTICACHE_MATCHING_ENDPOINT" "$MATCHING_REDIS"
 replace_placeholder "CHANGEME_ELASTICACHE_COLLABORATION_ENDPOINT" "$COLLAB_REDIS"
 replace_placeholder "CHANGEME_ELASTICACHE_CHAT_ENDPOINT" "$CHAT_REDIS"
+replace_placeholder "CHANGEME_DB_SSL_MODE" "$SESSION_DB_SSL_MODE"
+
+# Replace database username
+if [[ -n "$DB_USERNAME" ]]; then
+    log_info "Updating database username..."
+    replace_placeholder "CHANGEME_DB_USERNAME" "$DB_USERNAME"
+fi
+
+# Replace SECRET_KEY
+if [[ -n "$SECRET_KEY" ]]; then
+    log_info "Updating SECRET_KEY..."
+    replace_placeholder "CHANGEME_GENERATE_RANDOM_SECRET_KEY" "$SECRET_KEY"
+fi
+
+# Replace Kafka credentials
+if [[ -n "$SCHEMA_REGISTRY_KEY" ]]; then
+    log_info "Updating Kafka and Schema Registry credentials..."
+    replace_placeholder "CHANGEME_SCHEMA_REGISTRY_KEY" "$SCHEMA_REGISTRY_KEY"
+    replace_placeholder "CHANGEME_SCHEMA_REGISTRY_SECRET" "$SCHEMA_REGISTRY_SECRET"
+    replace_placeholder "CHANGEME_SASL_USERNAME" "$SASL_USERNAME"
+    replace_placeholder "CHANGEME_SASL_PASSWORD" "$SASL_PASSWORD"
+fi
 
 # Replace database password placeholders (raw and URL-encoded)
 if [[ -n "$DB_PASSWORD" ]]; then
@@ -315,21 +396,65 @@ if [[ -n "$DB_PASSWORD" ]]; then
     # URL-encode the password for DATABASE_URL strings
     DB_PASSWORD_ENCODED=$(url_encode_password "$DB_PASSWORD")
 
-    # First replace the raw password in *_DB_PASSWORD variables
+    # Replace all password placeholders in *_DB_PASSWORD variables
     replace_placeholder "CHANGE_ME_SECURE_PASSWORD_HERE" "$DB_PASSWORD"
+    replace_placeholder "CHANGEME_DB_PASSWORD" "$DB_PASSWORD"
 
-    # Then replace the URL-encoded password in *_DATABASE_URL variables
+    # Wrap *_DB_PASSWORD assignments in quotes to preserve characters like '#'
+    python3 - "$ENV_FILE" "$DB_PASSWORD" <<'PY'
+import sys
+
+path, password = sys.argv[1:3]
+keys = (
+    "USER_DB_PASSWORD",
+    "QUESTION_DB_PASSWORD",
+    "MATCHING_DB_PASSWORD",
+    "SESSION_DB_PASSWORD",
+    "DB_PASSWORD",
+)
+
+with open(path, "r", encoding="utf-8") as fh:
+    lines = fh.readlines()
+
+for idx, line in enumerate(lines):
+    stripped = line.strip()
+    for key in keys:
+        prefix = f"{key}="
+        if stripped.startswith(prefix) and "postgresql://" not in stripped:
+            lines[idx] = f"{prefix}\"{password}\"\n"
+            break
+
+with open(path, "w", encoding="utf-8") as fh:
+    fh.writelines(lines)
+PY
+
+    # Then replace the URL-encoded username and password in *_DATABASE_URL variables
     # This needs to happen after the raw replacement to avoid double-encoding
-    python3 - "$ENV_FILE" "$DB_PASSWORD" "$DB_PASSWORD_ENCODED" <<'PY'
+    python3 - "$ENV_FILE" "$DB_USERNAME" "$DB_PASSWORD" "$DB_PASSWORD_ENCODED" <<'PY'
 import sys
 import re
-path, raw_password, encoded_password = sys.argv[1:4]
+path, db_username, raw_password, encoded_password = sys.argv[1:5]
 
 with open(path, "r", encoding="utf-8") as fh:
     data = fh.read()
 
-# Replace password in DATABASE_URL patterns (postgresql://user:PASSWORD@host:port/db)
-# Only replace in URL contexts, not in plain password fields
+# Replace username and password in DATABASE_URL patterns
+# Pattern: postgresql://USERNAME:PASSWORD@host:port/db
+# Replace CHANGEME_DB_USERNAME with actual username
+data = re.sub(
+    r'postgresql://CHANGEME_DB_USERNAME:',
+    f'postgresql://{db_username}:',
+    data
+)
+
+# Replace password placeholders in DATABASE_URL (both raw and encoded)
+data = re.sub(
+    r'(postgresql://[^:]+:)CHANGEME_DB_PASSWORD(@[^/]+/\w+)',
+    r'\1' + encoded_password + r'\2',
+    data
+)
+
+# Replace any remaining raw passwords with encoded version in URLs
 data = re.sub(
     r'(postgresql://[^:]+:)' + re.escape(raw_password) + r'(@[^/]+/\w+)',
     r'\1' + encoded_password + r'\2',
@@ -340,7 +465,7 @@ with open(path, "w", encoding="utf-8") as fh:
     fh.write(data)
 PY
 
-    log_success "Updated database passwords (raw and URL-encoded)"
+    log_success "Updated database credentials (username and password, raw and URL-encoded)"
 fi
 
 # Generic Redis placeholder (best-effort: use matching endpoint)
