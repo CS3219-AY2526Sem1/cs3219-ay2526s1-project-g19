@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import WebSocket
 from fastapi.websockets import WebSocketState
 
+from core.redis_client import matching_redis
 from schemas.events import SessionCreatedSchema
 from schemas.message import MatchingStatus, MatchingEventMessage
 
@@ -13,27 +14,40 @@ logger = logging.getLogger(__name__)
 
 class WebSocketService:
     def __init__(self):
+        # Keep local connections for this task instance
         self.ws_connections: dict[UUID, WebSocket] = {}
+        # Redis key prefix for tracking active connections across all tasks
+        self.redis_key_prefix = "ws:active:"
 
     def record_ws_connection(
         self,
         user_id: UUID,
         websocket: WebSocket
     ) -> None:
+        # Store WebSocket object locally for this task
         self.ws_connections[user_id] = websocket
+        # Mark connection as active in Redis with 5 minute TTL
+        matching_redis.setex(f"{self.redis_key_prefix}{user_id}", 300, "1")
+        logger.info(f"Recorded WebSocket connection for user {user_id}")
         return
 
     def check_ws_connection(
         self,
         user_id: UUID
     ) -> bool:
-        logger.info(f"Current websocket connections: {self.ws_connections}")
-        return user_id in self.ws_connections
+        # Check Redis for active connection across all tasks
+        is_connected = matching_redis.exists(f"{self.redis_key_prefix}{user_id}") > 0
+        logger.info(f"Checking WebSocket for {user_id}: {is_connected}")
+        return is_connected
 
     async def close_ws_connection(
         self,
         user_id: UUID
     ) -> None:
+        # Remove from Redis tracking
+        matching_redis.delete(f"{self.redis_key_prefix}{user_id}")
+
+        # Close local WebSocket connection if it exists in this task
         if user_id in self.ws_connections:
             logger.info(f"Closing websocket of {user_id}")
             ws = self.ws_connections[user_id]

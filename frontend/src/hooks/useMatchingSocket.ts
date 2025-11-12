@@ -35,6 +35,12 @@ export const useMatchingSocket = () => {
 
       try {
         const ws = matchingService.createWebSocket();
+        if (!ws) {
+          setError('Failed to create WebSocket - no auth token');
+          resolve(false);
+          return;
+        }
+
         wsRef.current = ws;
         let connectionConfirmed = false;
 
@@ -137,6 +143,9 @@ export const useMatchingSocket = () => {
         setIsMatching(false);
         return;
       }
+
+      // Small delay to ensure WebSocket is stable
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // Verify WebSocket is still open before proceeding
       if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {

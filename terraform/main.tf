@@ -1124,7 +1124,7 @@ module "ecs_service_kafka" {
   security_group_ids = [module.security_groups.ecs_security_group_id]
 
   # Container Configuration
-  container_image  = "confluentinc/cp-kafka:7.5.0"
+  container_image  = "992382853559.dkr.ecr.ap-southeast-1.amazonaws.com/peerprep-prod-kafka:latest"
   container_port   = 29092
   container_cpu    = var.kafka_cpu
   container_memory = var.kafka_memory
@@ -1157,6 +1157,10 @@ module "ecs_service_kafka" {
     # Log configuration
     KAFKA_LOG_DIRS                  = "/var/lib/kafka/data"
     KAFKA_AUTO_CREATE_TOPICS_ENABLE = "true"
+
+    # Topic defaults - set cleanup policy to delete for regular topics
+    # Schema registry will override this for _schemas topic
+    KAFKA_LOG_CLEANUP_POLICY = "delete"
   }
 
   # EFS Volume Configuration for Persistent Storage
@@ -1188,6 +1192,11 @@ module "ecs_service_kafka" {
 
   # Graceful shutdown timeout (2 minutes for Kafka to flush and commit)
   stop_timeout = 120
+
+  # Deployment Configuration - CRITICAL for Kafka single broker with EFS
+  # Must stop old task before starting new one to avoid duplicate broker registration
+  deployment_minimum_healthy_percent = 0
+  deployment_maximum_percent         = 100
 
   # Ensure EFS is created before Kafka service
   depends_on = [module.efs_kafka]
@@ -1226,11 +1235,15 @@ module "ecs_service_schema_registry" {
   # Note: Official Confluent image doesn't support our custom secrets fetcher,
   # so we provide the minimal required config directly
   environment_variables = {
-    SCHEMA_REGISTRY_HOST_NAME                    = "schema-registry.${module.service_discovery.namespace_name}"
-    SCHEMA_REGISTRY_LISTENERS                    = "http://0.0.0.0:8081"
-    SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS = "kafka.${module.service_discovery.namespace_name}:29092"
-    SCHEMA_REGISTRY_KAFKASTORE_TOPIC             = "_schemas"
-    SCHEMA_REGISTRY_DEBUG                        = "false"
+    SCHEMA_REGISTRY_HOST_NAME                                  = "schema-registry.${module.service_discovery.namespace_name}"
+    SCHEMA_REGISTRY_LISTENERS                                  = "http://0.0.0.0:8081"
+    SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS               = "kafka.${module.service_discovery.namespace_name}:29092"
+    SCHEMA_REGISTRY_KAFKASTORE_TOPIC                           = "_schemas"
+    SCHEMA_REGISTRY_KAFKASTORE_TOPIC_REPLICATION_FACTOR        = "1"
+    SCHEMA_REGISTRY_KAFKASTORE_INIT_TIMEOUT_MS                 = "60000"
+    SCHEMA_REGISTRY_KAFKASTORE_TIMEOUT_MS                      = "10000"
+    SCHEMA_REGISTRY_SCHEMA_REGISTRY_INTER_INSTANCE_PROTOCOL    = "http"
+    SCHEMA_REGISTRY_DEBUG                                      = "false"
   }
 
   # IAM Roles
