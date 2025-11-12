@@ -31,18 +31,23 @@ async def get_current_user(
 
 async def get_user_from_ws(websocket: WebSocket) -> UUID:
     token = websocket.query_params.get("token")
+    logger.info(f"Token received: {token}")
 
     if not token:
+        logger.warning("No token provided; rejecting connection")
         await websocket.close(code=1008)
         return None
 
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=["HS256"])
+        logger.info(f"Decoded JWT payload: {payload}")
         user_id_str = payload.get("user_id")
         if not user_id_str:
+            logger.warning("JWT missing user_id; rejecting connection")
             await websocket.close(code=1008)
             return None
         return UUID(user_id_str)
-    except JWTError:
+    except JWTError as e:
+        logger.error(f"JWT decode failed: {e}")
         await websocket.close(code=1008)
         return None

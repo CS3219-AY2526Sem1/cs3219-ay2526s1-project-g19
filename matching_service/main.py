@@ -138,6 +138,7 @@ async def get_languages():
 
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
+    logger.info(f"Incoming WebSocket connection: path={websocket.url.path} full_url={websocket.url} headers={dict(websocket.headers)} query_params={dict(websocket.query_params)}")
     user_id = await get_user_from_ws(websocket)
     if not user_id:
         return
