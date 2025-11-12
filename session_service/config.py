@@ -5,6 +5,24 @@ from pydantic import Field
 
 logger = logging.getLogger(__name__)
 
+VALID_SSL_MODES = {
+    "disable",
+    "allow",
+    "prefer",
+    "require",
+    "verify-ca",
+    "verify-full"
+}
+
+SSL_MODE_ALIASES = {
+    "1": "require",
+    "true": "require",
+    "on": "require",
+    "0": "disable",
+    "false": "disable",
+    "off": "disable"
+}
+
 
 class Settings(BaseSettings):
     environment: str = "production"
@@ -30,6 +48,24 @@ class Settings(BaseSettings):
     # jwt decode
     secret_key: str
 
+    def _normalized_ssl_mode(self) -> str | None:
+        raw_mode = self.session_db_ssl_mode
+        if raw_mode is None:
+            return None
+        mode = str(raw_mode).strip().strip('"\'' ).lower()
+        if not mode:
+            return None
+        mode = SSL_MODE_ALIASES.get(mode, mode)
+        if mode not in VALID_SSL_MODES:
+            logger.warning(
+                "Invalid SESSION_DB_SSL_MODE '%s'. Falling back to 'require'. "
+                "Valid values: %s",
+                raw_mode,
+                ", ".join(sorted(VALID_SSL_MODES))
+            )
+            return "require"
+        return mode
+
     def _build_pg_url(self, driver: str, include_sslmode: bool = True) -> str:
         url = (
             f"postgresql+{driver}://{self.session_db_user}:"
@@ -37,7 +73,7 @@ class Settings(BaseSettings):
             f"{self.session_db_port}/{self.session_db_name}"
         )
         if include_sslmode:
-            sslmode = (self.session_db_ssl_mode or "").strip()
+            sslmode = self._normalized_ssl_mode()
             if sslmode:
                 url += f"?sslmode={sslmode}"
         return url
@@ -52,7 +88,7 @@ class Settings(BaseSettings):
 
     @property
     def async_ssl_context(self) -> ssl.SSLContext | None:
-        mode = (self.session_db_ssl_mode or "").strip()
+        mode = self._normalized_ssl_mode()
         if mode in ("require", "verify-ca", "verify-full"):
             context = ssl.create_default_context()
             # 'require' disables hostname verification

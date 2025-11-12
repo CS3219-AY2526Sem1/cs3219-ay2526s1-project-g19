@@ -77,6 +77,21 @@ if [ -n "$SERVICE_PREFIX_OVERRIDE" ]; then
     echo "[Config] SERVICE_PREFIX overridden to $SERVICE_PREFIX"
 fi
 
+is_consumer_command=false
+for arg in "$@"; do
+    case "$arg" in
+        kafka.consumers.*)
+            is_consumer_command=true
+            break
+            ;;
+    esac
+done
+
+if [ "$is_consumer_command" = true ] && [ "$SKIP_DB_SETUP" != "true" ]; then
+    export SKIP_DB_SETUP=true
+    echo "[Config] Detected Kafka consumer command. Forcing SKIP_DB_SETUP=true (was '${SKIP_DB_SETUP:-unset}')."
+fi
+
 # Register kafka schema registry schemas
 if [ -f "kafka/scripts/register_schemas.py" ]; then
   echo "Registering Kafka schemas..."
@@ -111,6 +126,9 @@ PY
 }
 
 if [ "${SKIP_DB_SETUP}" != "true" ]; then
+  echo "[DB] SESSION_DB_HOST=${SESSION_DB_HOST:-session_db}"
+  echo "[DB] SESSION_DB_PORT=${SESSION_DB_PORT:-5432}"
+  echo "[DB] SESSION_DB_SSL_MODE=${SESSION_DB_SSL_MODE:-<unset>}"
   wait_for_db
   echo "Running migrations..."
   alembic upgrade head
