@@ -24,7 +24,7 @@ const QuestionHeader = ({ title, difficulty, topics, stats, company_tags }) => (
 
       {/* Stats Row */}
       <div className="flex flex-wrap items-center gap-4 text-white/90 text-xs">
-        <div className="flex items-center gap-1">
+        {/* <div className="flex items-center gap-1">
           <Eye className="w-3 h-3" />
           <span>{stats.views.toLocaleString()} views</span>
         </div>
@@ -35,7 +35,7 @@ const QuestionHeader = ({ title, difficulty, topics, stats, company_tags }) => (
         <div className="flex items-center gap-1">
           <Trophy className="w-3 h-3" />
           <span>{stats.solved.toLocaleString()} solved ({stats.percentage_solved}%)</span>
-        </div>
+        </div> */}
         <div className="flex items-center gap-1">
           <Building2 className="w-3 h-3" />
           <span>{company_tags}</span>

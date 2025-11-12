@@ -1,6 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 from sqlmodel import and_, select
+from sqlalchemy import desc
 from models.session import Session, SessionUser
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased, selectinload
@@ -80,7 +81,7 @@ class SessionRepo:
         ).where(
             su1.user_id == user_id
         ).order_by(
-            self.model.started_at
+            desc(self.model.started_at)
         ).limit(
             size
         ).offset(

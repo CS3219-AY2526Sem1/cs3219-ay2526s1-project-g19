@@ -11,7 +11,6 @@ import uvicorn
 import logging
 from kafka.kafka_client import kafka_client
 from core.security import get_current_user, get_user_from_ws
-from service.django_question_service import django_question_service
 from schemas.matching import VALID_LANGUAGE_LIST, MatchUserRequestSchema, MatchingCriteriaSchema
 from service.redis_controller import redis_controller
 from service.matching import matching_service
@@ -39,7 +38,6 @@ async def lifespan(app: FastAPI):
     logger.info("Cleaning up events on shutdown...")
     expiry_event_listener.cancel()
     session_created_listener.cancel()
-    await django_question_service.shutdown()
     kafka_client.shutdown()
 
 router = APIRouter(prefix="/api", redirect_slashes=False)

@@ -17,6 +17,7 @@ const NavBar = () => {
 
     const navPages = [
         { name: 'Home', path: '/home' },
+        { name: 'Questions', path: '/questions' },
         { name: 'Matching', path: '/matching' },
     ]
 

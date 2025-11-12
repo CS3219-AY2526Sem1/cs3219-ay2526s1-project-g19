@@ -17,6 +17,7 @@ export const useMatchingSocket = () => {
   const [matchFound, setMatchFound] = useState(false);
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isRelaxed, setIsRelaxed] = useState(false);
 
   // Connect WebSocket and setup listeners
   const connectWebSocket = useCallback((): Promise<boolean> => {
@@ -78,11 +79,14 @@ export const useMatchingSocket = () => {
             setMatchFound(true);
             setSessionData(message.session);
             setIsMatching(false);
+            setIsRelaxed(false);
           } else if (message.status === 'timeout') {
             setIsMatching(false);
             setError('No match found within the time limit');
+            setIsRelaxed(false);
           } else if (message.status === 'relax') {
-            console.log('Language matching relaxed');
+            console.log('Language matching relaxed - now including secondary languages');
+            setIsRelaxed(true);
           }
         };
 
@@ -133,6 +137,7 @@ export const useMatchingSocket = () => {
     setError(null);
     setIsMatching(true);
     setMatchFound(false);
+    setIsRelaxed(false); // Reset relaxed state when starting new match
 
     try {
       // Connect WebSocket
@@ -187,9 +192,11 @@ export const useMatchingSocket = () => {
     try {
       await matchingService.removeFromQueue();
       setIsMatching(false);
+      setIsRelaxed(false); // Reset relaxed state when canceling
     } catch (error: any) {
       if (error.response?.status === 404) {
         setIsMatching(false);
+        setIsRelaxed(false);
       }
     }
 
@@ -204,6 +211,7 @@ export const useMatchingSocket = () => {
     setSessionData(null);
     setError(null);
     setIsMatching(false);
+    setIsRelaxed(false);
   }, []);
 
   // Cleanup
@@ -220,6 +228,7 @@ export const useMatchingSocket = () => {
     matchFound,
     sessionData,
     error,
+    isRelaxed,
     startMatching,
     cancelMatching,
     resetMatch,

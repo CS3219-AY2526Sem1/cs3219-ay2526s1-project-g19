@@ -71,7 +71,7 @@ async def end_session(
 
 @router.get("/history", response_model=list[SessionHistorySchema])
 async def get_history(
-    user_id: UUID,
+    user_id=Depends(get_current_user),
     size: int = 10,
     page: int = 1,
     db_session: AsyncSession = Depends(get_db_session)

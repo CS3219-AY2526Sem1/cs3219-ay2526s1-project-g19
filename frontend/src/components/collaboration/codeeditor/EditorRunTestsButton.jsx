@@ -9,7 +9,7 @@ const EditorRunTestsButton = ({ onClick, isRunning, disabled = false }) => (
       transition-all duration-200 transform
       ${isRunning || disabled
         ? 'bg-gray-400 cursor-not-allowed' 
-        : 'bg-blue-600 hover:bg-blue-700 active:scale-95 cursor-pointer'
+        : 'bg-primary hover:bg-blue-700 active:scale-95 cursor-pointer'
       }
       text-white
     `}

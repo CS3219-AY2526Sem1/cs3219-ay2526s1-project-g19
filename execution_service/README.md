@@ -1,6 +1,6 @@
 # Execution Service
 
-A Django-based microservice for code execution and testing, integrated with Judge0 and the question service.
+A Django-based microservice for code execution and testing, integrated with Judge0 cloud and the question service.
 
 ## Features
 
@@ -260,5 +260,3 @@ docker-compose logs judge0
 3. Configure proper CORS settings
 4. Set up monitoring and logging
 5. Consider rate limiting and authentication
-
-

@@ -14,4 +14,7 @@ export const sessionService = {
       return null;
     }
   },
+  // Get session history (5 session per page)
+  getHistory: (page: number = 1, size: number = 5) =>
+    sessionClient.get(`/api/session/history?page=${page}&size=${size}`),
 };

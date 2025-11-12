@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
-const FindingMatch = ({ selections: { topic, difficulty, preferredLanguage, backupLanguages }, onCancel }) => {
+const FindingMatch = ({ selections: { topic, difficulty, preferredLanguage, backupLanguages }, onCancel, isRelaxed }) => {
     const [seconds, setSeconds] = useState(0);
     const [isMatching, setIsMatching] = useState(true);
 
@@ -43,13 +43,21 @@ const FindingMatch = ({ selections: { topic, difficulty, preferredLanguage, back
                 {formatTime(seconds)}
             </p>
 
-            <div className="w-full h-2 bg-background-secondary rounded-full overflow-hidden mb-8">
+            <div className="w-full h-2 bg-background-secondary rounded-full overflow-hidden mb-4">
                 <div 
                     className="h-full bg-primary transition-all duration-1000 ease-out"
                     style={{ width: `${Math.min((seconds / 60) * 100, 100)}%` }}
                     // Max matching time is 1min
                 ></div>
             </div>
+
+            {isRelaxed && backupLanguages && backupLanguages.length > 0 && (
+                <div className="mb-4 p-3 bg-yellow-900/20 border border-yellow-700 rounded-lg animate-pulse">
+                    <p className="text-yellow-400 text-sm text-center">
+                        Now also matching with backup languages: <strong>{backupLanguages.join(', ')}</strong>
+                    </p>
+                </div>
+            )}
 
             <button
                 onClick={onCancel}

@@ -26,3 +26,5 @@ consumer_config = {
 
 REQUEST_TOPIC = os.getenv("TOPIC_MATCH_FOUND", "match.found")
 RESPONSE_TOPIC = os.getenv("TOPIC_QUESTION_CHOSEN", "question.chosen")
+TOPICS_UPDATED_TOPIC = os.getenv("TOPIC_TOPICS_UPDATED", "topics.updated")
+DIFFICULTIES_UPDATED_TOPIC = os.getenv("TOPIC_DIFFICULTIES_UPDATED", "difficulties.updated")

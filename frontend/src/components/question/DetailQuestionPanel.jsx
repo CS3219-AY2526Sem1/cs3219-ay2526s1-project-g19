@@ -1,7 +1,7 @@
-import QuestionHeader from "./questionpanel/QuestionHeader";
-import QuestionDescription from "./questionpanel/QuestionDescription";
+import QuestionHeader from "../collaboration/questionpanel/QuestionHeader";
+import QuestionDescription from "../collaboration/questionpanel/QuestionDescription";
 
-export default function QuestionPanel({ questionData }) {
+function DetailQuestionPanel({ question: questionData }) {
   // Helper function to parse topics (can be string or array)
   const parseTopics = (topics) => {
     if (!topics) return [];
@@ -115,3 +115,5 @@ export default function QuestionPanel({ questionData }) {
       </div>
   );
 }
+
+export default DetailQuestionPanel;

@@ -4,7 +4,6 @@ from uuid import UUID
 from fastapi import HTTPException, status
 
 from schemas.matching import VALID_LANGUAGE_LIST, MatchingCriteriaSchema
-from service.django_question_service import django_question_service
 from service.redis_controller import redis_controller
 
 logger = logging.getLogger(__name__)
@@ -37,7 +36,7 @@ class MatchingService:
         criteria: MatchingCriteriaSchema
     ) -> MatchingCriteriaSchema:
         # validate topics
-        valid_topics = await django_question_service.get_topics()
+        valid_topics = await redis_controller.get_topics()
         for topic in criteria.topics:
             if topic not in valid_topics:
                 raise HTTPException(
@@ -47,7 +46,7 @@ class MatchingService:
         if len(criteria.topics) == 0:
             criteria.topics = valid_topics
         # validate difficulty
-        valid_difficulty = await django_question_service.get_difficulty()
+        valid_difficulty = await redis_controller.get_difficulties()
         for diff in criteria.difficulty:
             if diff not in valid_difficulty:
                 raise HTTPException(

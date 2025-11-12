@@ -26,6 +26,9 @@ services:
       - USER_SERVICE_URL=${USER_SERVICE_URL:-http://user-service:8000}
       - MATCHING_SERVICE_URL=${MATCHING_SERVICE_URL:-http://matching-service:8000}
       - HISTORY_SERVICE_URL=${HISTORY_SERVICE_URL:-http://history-service:8000}
+      # Data loading configuration
+      - LOAD_FIXTURES=${LOAD_FIXTURES:-true}
+      - FIXTURE_FILE=${FIXTURE_FILE:-fixtures/mock_1042_9_oct.json}
     volumes:
       - ./:/app:rw
     networks:

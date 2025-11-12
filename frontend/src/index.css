@@ -39,6 +39,29 @@ body {
   font-family: 'ubuntu', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+/* Smooth page transitions */
+.page-transition {
+  animation: fadeIn 0.15s ease-out;
+  will-change: opacity;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Prevent flash of white on navigation */
+#root {
+  background-color: #111827;
+  min-height: 100vh;
+}
+
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
