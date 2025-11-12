@@ -87,6 +87,8 @@ for arg in "$@"; do
     esac
 done
 
+echo "is_consumer_command=$is_consumer_command"
+echo "SKIP_DB_SETUP=$SKIP_DB_SETUP"
 if [ "$is_consumer_command" = true ] && [ "$SKIP_DB_SETUP" != "true" ]; then
     export SKIP_DB_SETUP=true
     echo "[Config] Detected Kafka consumer command. Forcing SKIP_DB_SETUP=true (was '${SKIP_DB_SETUP:-unset}')."
@@ -125,6 +127,7 @@ while True:
 PY
 }
 
+echo "value of skip_db_setup is ${SKIP_DB_SETUP}"
 if [ "${SKIP_DB_SETUP}" != "true" ]; then
   echo "[DB] SESSION_DB_HOST=${SESSION_DB_HOST:-session_db}"
   echo "[DB] SESSION_DB_PORT=${SESSION_DB_PORT:-5432}"
