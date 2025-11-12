@@ -1,7 +1,7 @@
 import logging
 import os
 from confluent_kafka.schema_registry import Schema
-from kafka.kafka_client import kafka_client
+from ..kafka_client import kafka_client
 
 logger = logging.getLogger(__name__)
 

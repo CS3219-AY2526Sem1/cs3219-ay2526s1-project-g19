@@ -1095,13 +1095,13 @@ module "efs_kafka" {
   encrypted        = true
 
   # Create access point for better permission management
-  create_access_point         = true
-  posix_user_uid              = 1000 # appuser in Kafka container
-  posix_user_gid              = 1000
-  root_directory_path         = "/kafka"
-  root_directory_permissions  = "755"
+  create_access_point        = true
+  posix_user_uid             = 1000 # appuser in Kafka container
+  posix_user_gid             = 1000
+  root_directory_path        = "/kafka"
+  root_directory_permissions = "755"
 
-  tags = {}  # Empty tags to avoid IAM permission issues
+  tags = {} # Empty tags to avoid IAM permission issues
 }
 
 # -----------------------------------------------------------------------------
@@ -1235,15 +1235,15 @@ module "ecs_service_schema_registry" {
   # Note: Official Confluent image doesn't support our custom secrets fetcher,
   # so we provide the minimal required config directly
   environment_variables = {
-    SCHEMA_REGISTRY_HOST_NAME                                  = "schema-registry.${module.service_discovery.namespace_name}"
-    SCHEMA_REGISTRY_LISTENERS                                  = "http://0.0.0.0:8081"
-    SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS               = "kafka.${module.service_discovery.namespace_name}:29092"
-    SCHEMA_REGISTRY_KAFKASTORE_TOPIC                           = "_schemas"
-    SCHEMA_REGISTRY_KAFKASTORE_TOPIC_REPLICATION_FACTOR        = "1"
-    SCHEMA_REGISTRY_KAFKASTORE_INIT_TIMEOUT_MS                 = "60000"
-    SCHEMA_REGISTRY_KAFKASTORE_TIMEOUT_MS                      = "10000"
-    SCHEMA_REGISTRY_SCHEMA_REGISTRY_INTER_INSTANCE_PROTOCOL    = "http"
-    SCHEMA_REGISTRY_DEBUG                                      = "false"
+    SCHEMA_REGISTRY_HOST_NAME                               = "schema-registry.${module.service_discovery.namespace_name}"
+    SCHEMA_REGISTRY_LISTENERS                               = "http://0.0.0.0:8081"
+    SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS            = "kafka.${module.service_discovery.namespace_name}:29092"
+    SCHEMA_REGISTRY_KAFKASTORE_TOPIC                        = "_schemas"
+    SCHEMA_REGISTRY_KAFKASTORE_TOPIC_REPLICATION_FACTOR     = "1"
+    SCHEMA_REGISTRY_KAFKASTORE_INIT_TIMEOUT_MS              = "60000"
+    SCHEMA_REGISTRY_KAFKASTORE_TIMEOUT_MS                   = "10000"
+    SCHEMA_REGISTRY_SCHEMA_REGISTRY_INTER_INSTANCE_PROTOCOL = "http"
+    SCHEMA_REGISTRY_DEBUG                                   = "false"
   }
 
   # IAM Roles
@@ -1485,6 +1485,79 @@ resource "aws_ecs_service" "matching_consumer_session_created" {
     var.tags,
     {
       Name    = "${var.project_name}-${var.environment}-matching-consumer-session-created"
+      Service = "matching-service"
+      Type    = "kafka-consumer"
+    }
+  )
+}
+
+# -----------------------------------------------------------------------------
+# 14. Matching Service Kafka Consumer: Topics & Difficulties Updates
+# -----------------------------------------------------------------------------
+resource "aws_ecs_task_definition" "matching_consumer_topics_difficulties" {
+  family                   = "${var.project_name}-${var.environment}-matching-consumer-topics-difficulties"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = 256
+  memory                   = 512
+  execution_role_arn       = module.ecs_cluster.task_execution_role_arn
+  task_role_arn            = module.ecs_cluster.task_role_arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "matching-consumer-topics-difficulties"
+      image     = "${aws_ecr_repository.services["matching-service"].repository_url}:latest"
+      command   = ["python", "-m", "kafka.consumers.topics_difficulties"]
+      essential = true
+
+      environment = [
+        { name = "AWS_SECRET_NAME", value = aws_secretsmanager_secret.ecs_env.name },
+        { name = "AWS_REGION", value = var.aws_region }
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = module.ecs_cluster.cloudwatch_log_group_name
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "matching-consumer-topics-difficulties"
+        }
+      }
+    }
+  ])
+
+  tags = merge(
+    var.tags,
+    {
+      Name    = "${var.project_name}-${var.environment}-matching-consumer-topics-difficulties"
+      Service = "matching-service"
+      Type    = "kafka-consumer"
+    }
+  )
+}
+
+resource "aws_ecs_service" "matching_consumer_topics_difficulties" {
+  name            = "matching-consumer-topics-difficulties"
+  cluster         = module.ecs_cluster.cluster_id
+  task_definition = aws_ecs_task_definition.matching_consumer_topics_difficulties.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = module.vpc.private_subnet_ids
+    security_groups  = [module.security_groups.ecs_security_group_id]
+    assign_public_ip = false
+  }
+
+  depends_on = [
+    module.ecs_service_kafka,
+    module.ecs_service_schema_registry
+  ]
+
+  tags = merge(
+    var.tags,
+    {
+      Name    = "${var.project_name}-${var.environment}-matching-consumer-topics-difficulties"
       Service = "matching-service"
       Type    = "kafka-consumer"
     }

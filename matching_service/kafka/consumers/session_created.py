@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 import logging.config
-from kafka.kafka_client import kafka_client
+from ..kafka_client import kafka_client
 from config import settings
 from confluent_kafka import Message
 from service.redis_controller import redis_controller
