@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     session_db_name: str
     session_db_user: str
     session_db_password: str
+    session_db_ssl_mode: str = "require"
 
     # Kafka variables
     session_group_id: str = Field(alias="SESSION_GROUP_ID")
@@ -31,6 +32,7 @@ class Settings(BaseSettings):
             f"postgresql+asyncpg://{self.session_db_user}:"
             f"{self.session_db_password}@{self.session_db_host}:"
             f"{self.session_db_port}/{self.session_db_name}"
+            f"?sslmode={self.session_db_ssl_mode}"
         )
 
 

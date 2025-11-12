@@ -91,10 +91,10 @@ output "rds_session_endpoint" {
 output "rds_connection_strings" {
   description = "Database connection strings for services"
   value = {
-    user_db     = "postgresql://${var.db_username}:****@${module.rds_user.db_host}:${module.rds_user.db_port}/user_db"
-    question_db = "postgresql://${var.db_username}:****@${module.rds_question.db_host}:${module.rds_question.db_port}/question_db"
-    matching_db = "postgresql://${var.db_username}:****@${module.rds_matching.db_host}:${module.rds_matching.db_port}/matching_db"
-    session_db  = "postgresql://${var.db_username}:****@${module.rds_session.db_host}:${module.rds_session.db_port}/session_db"
+    user_db     = "postgresql://${var.db_username}:****@${module.rds_user.db_host}:${module.rds_user.db_port}/user_db?sslmode=require"
+    question_db = "postgresql://${var.db_username}:****@${module.rds_question.db_host}:${module.rds_question.db_port}/question_db?sslmode=require"
+    matching_db = "postgresql://${var.db_username}:****@${module.rds_matching.db_host}:${module.rds_matching.db_port}/matching_db?sslmode=require"
+    session_db  = "postgresql://${var.db_username}:****@${module.rds_session.db_host}:${module.rds_session.db_port}/session_db?sslmode=require"
   }
   sensitive = true
 }
