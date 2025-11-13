@@ -227,5 +227,5 @@ variable "stop_timeout" {
 variable "enable_execute_command" {
   description = "Enable ECS Exec for debugging"
   type        = bool
-  default     = false
+  default     = true
 }

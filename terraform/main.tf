@@ -492,6 +492,7 @@ module "ecs_service_user" {
   container_cpu    = var.user_service_cpu
   container_memory = var.user_service_memory
   desired_count    = var.user_service_desired_count
+  enable_execute_command = true
 
   # Environment Variables - Fetched from AWS Secrets Manager
   environment_variables = merge(
@@ -548,6 +549,7 @@ module "ecs_service_question" {
   container_cpu    = var.question_service_cpu
   container_memory = var.question_service_memory
   desired_count    = var.question_service_desired_count
+  enable_execute_command = true
 
   # Environment Variables - Fetched from AWS Secrets Manager
   environment_variables = merge(
@@ -604,6 +606,7 @@ module "ecs_service_matching" {
   container_cpu    = var.matching_service_cpu
   container_memory = var.matching_service_memory
   desired_count    = var.matching_service_desired_count
+  enable_execute_command = true
 
   # Environment Variables - Fetched from AWS Secrets Manager
   environment_variables = merge(
@@ -660,6 +663,7 @@ module "ecs_service_session" {
   container_cpu    = var.session_service_cpu
   container_memory = var.session_service_memory
   desired_count    = var.session_service_desired_count
+  enable_execute_command = true
 
   # Environment Variables - Fetched from AWS Secrets Manager
   environment_variables = merge(
@@ -716,6 +720,7 @@ module "ecs_service_collaboration" {
   container_cpu    = var.collaboration_service_cpu
   container_memory = var.collaboration_service_memory
   desired_count    = var.collaboration_service_desired_count
+  enable_execute_command = true
 
   # Environment Variables - Fetched from AWS Secrets Manager
   environment_variables = merge(
@@ -772,6 +777,7 @@ module "ecs_service_chat" {
   container_cpu    = var.chat_service_cpu
   container_memory = var.chat_service_memory
   desired_count    = var.chat_service_desired_count
+  enable_execute_command = true
 
   # Environment Variables - Fetched from AWS Secrets Manager
   environment_variables = merge(
@@ -828,6 +834,7 @@ module "ecs_service_execution" {
   container_cpu    = var.execution_service_cpu
   container_memory = var.execution_service_memory
   desired_count    = var.execution_service_desired_count
+  enable_execute_command = true
 
   # Environment Variables - Fetched from AWS Secrets Manager
   environment_variables = merge(
@@ -884,6 +891,7 @@ module "ecs_service_frontend" {
   container_cpu    = var.frontend_cpu
   container_memory = var.frontend_memory
   desired_count    = var.frontend_desired_count
+  enable_execute_command = true
 
   # Environment Variables - Frontend nginx configuration
   # Note: Frontend uses nginx and needs service hostnames for proxying
@@ -1129,6 +1137,7 @@ module "ecs_service_kafka" {
   container_cpu    = var.kafka_cpu
   container_memory = var.kafka_memory
   desired_count    = 1 # Single broker for now
+  enable_execute_command = true
   container_health_check_command = [
     "CMD-SHELL",
     "kafka-broker-api-versions --bootstrap-server 127.0.0.1:29092 >/dev/null 2>&1"
@@ -1230,6 +1239,7 @@ module "ecs_service_schema_registry" {
   container_memory            = var.schema_registry_memory
   container_health_check_path = "/subjects"
   desired_count               = 1
+  enable_execute_command      = true
 
   # Environment Variables - Schema Registry Configuration
   # Note: Official Confluent image doesn't support our custom secrets fetcher,

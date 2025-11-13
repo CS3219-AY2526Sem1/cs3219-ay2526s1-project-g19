@@ -14,7 +14,7 @@ USE_SQLITE = os.environ.get("DJANGO_USE_SQLITE", "1") == "1"
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-df)+b=!9x-hs(5ot8zvsdr!tg3d$vs3!!2tee8%ltior+_ha-h')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
+DEBUG = True
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,0.0.0.0', cast=lambda v: [s.strip() for s in v.split(',')])
 

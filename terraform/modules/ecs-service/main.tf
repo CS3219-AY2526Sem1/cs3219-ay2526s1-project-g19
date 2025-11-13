@@ -115,6 +115,7 @@ resource "aws_ecs_service" "main" {
   cluster         = var.cluster_id
   task_definition = aws_ecs_task_definition.main.arn
   desired_count   = var.desired_count
+  enable_execute_command = var.enable_execute_command
 
   # Only use launch_type when not using capacity providers
   launch_type = var.use_capacity_providers ? null : "FARGATE"
