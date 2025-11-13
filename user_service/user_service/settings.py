@@ -245,6 +245,7 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_ADAPTER = 'authentication.adapters.ProxyAwareAccountAdapter'
 
 # Email configuration
 EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
@@ -259,6 +260,7 @@ EMAIL_SUBJECT_PREFIX = '[PeerPrep] '
 
 # Email SSO configuration
 FRONTEND_BASE_URL = config('FRONTEND_BASE_URL', default='http://localhost:5173')
+VITE_USER_SERVICE_URL = config('VITE_USER_SERVICE_URL', default='/user-service-api')
 EMAIL_SSO_CALLBACK_PATH = config('EMAIL_SSO_CALLBACK_PATH', default='/auth/email-sso')
 EMAIL_SSO_TOKEN_TTL_MINUTES = config('EMAIL_SSO_TOKEN_TTL_MINUTES', default=15, cast=int)
 EMAIL_SSO_SUBJECT = config('EMAIL_SSO_SUBJECT', default='[PeerPrep] Sign in link')
@@ -266,6 +268,8 @@ EMAIL_SSO_SUBJECT = config('EMAIL_SSO_SUBJECT', default='[PeerPrep] Sign in link
 # After login or email confirmation, send user here:
 LOGIN_REDIRECT_URL = FRONTEND_BASE_URL + '/login'
 LOGOUT_REDIRECT_URL = FRONTEND_BASE_URL
+
+USER_SERVICE_PUBLIC_BASE_URL = FRONTEND_BASE_URL + VITE_USER_SERVICE_URL
 
 # Redirect with verification success parameter after email confirmation
 ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = FRONTEND_BASE_URL + '/login?verified=true'
