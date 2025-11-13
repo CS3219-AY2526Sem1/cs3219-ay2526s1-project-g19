@@ -1,0 +1,391 @@
+# =============================================================================
+# PeerPrep Frontend - Nginx Configuration Template
+# =============================================================================
+# This file uses environment variable substitution via envsubst
+# Variables are replaced when the container starts
+#
+# Environment Variables Required:
+#   NGINX_USER_SERVICE_HOST
+#   NGINX_QUESTION_SERVICE_HOST
+#   NGINX_MATCHING_SERVICE_HOST
+#   NGINX_HISTORY_SERVICE_HOST
+#   NGINX_SESSION_SERVICE_HOST
+#   NGINX_COLLABORATION_SERVICE_HOST
+#   NGINX_CHAT_SERVICE_HOST
+#   NGINX_EXECUTION_SERVICE_HOST
+#
+# Request Flow:
+#   Browser → /user-service-api/login → user-service:8000/login
+#   Browser → /question-service-api/api/questions → question-service:8000/api/questions
+# =============================================================================
+
+# Use Docker's internal DNS resolver for service discovery
+# This allows nginx to start even if backend services aren't ready yet
+resolver 127.0.0.11 valid=10s ipv6=off;
+resolver_timeout 5s;
+
+server {
+    listen 80;
+    server_name localhost;
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    # Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_types
+        text/plain
+        text/css
+        text/xml
+        text/javascript
+        application/javascript
+        application/x-javascript
+        application/json
+        application/xml
+        application/xml+rss
+        image/svg+xml;
+
+    # ==========================================================================
+    # Frontend Static Files (React SPA)
+    # ==========================================================================
+    location / {
+        root /usr/share/nginx/html;
+        try_files $uri $uri/ /index.html;
+
+        # Security: Prevent access to hidden files
+        location ~ /\. {
+            deny all;
+            access_log off;
+            log_not_found off;
+        }
+    }
+
+    # Cache static assets aggressively
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|otf)$ {
+        root /usr/share/nginx/html;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+    }
+
+    # ==========================================================================
+    # API Proxy Rules - Pattern: /service-name-api/* → http://service:8000/*
+    # ==========================================================================
+    # Note: WebSocket/Socket.IO connections are handled by the collaboration-service-api
+    # and chat-service-api proxy rules below (they have ws: true enabled)
+
+    # ---------------------------------------------------------------------------
+    # User Service API
+    # ---------------------------------------------------------------------------
+    # Browser: /user-service-api/login → Backend: /login
+    # Browser: /user-service-api/api/users/123 → Backend: /api/users/123
+    location /user-service-api/ {
+        # Use variable to force runtime DNS resolution
+        set $user_service ${NGINX_USER_SERVICE_HOST};
+        rewrite ^/user-service-api/(.*)$ /$1 break;
+        proxy_pass http://$user_service:8000;
+
+        # Proxy headers
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
+        proxy_set_header X-Forwarded-Prefix /user-service-api;
+
+        # Timeouts
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+
+        # Buffer settings
+        proxy_buffering on;
+        proxy_buffer_size 4k;
+        proxy_buffers 8 4k;
+        proxy_busy_buffers_size 8k;
+
+        # Error handling
+        proxy_intercept_errors off;
+
+        # CORS handling (if backend doesn't handle it)
+        add_header Access-Control-Allow-Origin * always;
+        add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, PATCH, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With" always;
+        add_header Access-Control-Max-Age 86400 always;
+
+        # Handle preflight requests
+        if ($request_method = OPTIONS) {
+            return 204;
+        }
+    }
+
+    # ---------------------------------------------------------------------------
+    # Question Service API
+    # ---------------------------------------------------------------------------
+    location /question-service-api/ {
+        set $question_service ${NGINX_QUESTION_SERVICE_HOST};
+        rewrite ^/question-service-api/(.*)$ /$1 break;
+        proxy_pass http://$question_service:8000;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Prefix /question-service-api;
+
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+
+        add_header Access-Control-Allow-Origin * always;
+        add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, PATCH, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Content-Type, Authorization" always;
+
+        if ($request_method = OPTIONS) {
+            return 204;
+        }
+    }
+
+    # ---------------------------------------------------------------------------
+    # Matching Service API (WebSocket Support)
+    # ---------------------------------------------------------------------------
+    location /matching-service-api/ {
+        set $matching_service ${NGINX_MATCHING_SERVICE_HOST};
+        rewrite ^/matching-service-api/(.*)$ /$1 break;
+        proxy_pass http://$matching_service:8000;
+
+        # Standard proxy headers
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Prefix /matching-service-api;
+
+        # WebSocket support
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_cache_bypass $http_upgrade;
+
+        # Extended timeouts for WebSocket connections
+        proxy_connect_timeout 7d;
+        proxy_send_timeout 7d;
+        proxy_read_timeout 7d;
+
+        # Disable buffering for WebSocket
+        proxy_buffering off;
+
+        add_header Access-Control-Allow-Origin * always;
+        add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, PATCH, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Content-Type, Authorization, Upgrade, Connection" always;
+
+        if ($request_method = OPTIONS) {
+            return 204;
+        }
+    }
+
+    # ---------------------------------------------------------------------------
+    # History Service API
+    # ---------------------------------------------------------------------------
+    location /history-service-api/ {
+        set $history_service ${NGINX_HISTORY_SERVICE_HOST};
+        rewrite ^/history-service-api/(.*)$ /$1 break;
+        proxy_pass http://$history_service:8000;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Prefix /history-service-api;
+
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+
+        add_header Access-Control-Allow-Origin * always;
+        add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, PATCH, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Content-Type, Authorization" always;
+
+        if ($request_method = OPTIONS) {
+            return 204;
+        }
+    }
+
+    # ---------------------------------------------------------------------------
+    # Session Service API
+    # ---------------------------------------------------------------------------
+    location /session-service-api/ {
+        set $session_service ${NGINX_SESSION_SERVICE_HOST};
+        rewrite ^/session-service-api/(.*)$ /$1 break;
+        proxy_pass http://$session_service:8000;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Prefix /session-service-api;
+
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+
+        add_header Access-Control-Allow-Origin * always;
+        add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, PATCH, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Content-Type, Authorization" always;
+
+        if ($request_method = OPTIONS) {
+            return 204;
+        }
+    }
+
+    # ---------------------------------------------------------------------------
+    # Collaboration Service API (WebSocket Support)
+    # ---------------------------------------------------------------------------
+    location /collaboration-service-api/ {
+        set $collaboration_service ${NGINX_COLLABORATION_SERVICE_HOST};
+        rewrite ^/collaboration-service-api/(.*)$ /$1 break;
+
+        proxy_pass http://$collaboration_service:8000;
+
+        # Standard proxy headers
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Prefix /collaboration-service-api;
+
+        # WebSocket support
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_cache_bypass $http_upgrade;
+
+        # Extended timeouts for WebSocket connections
+        proxy_connect_timeout 7d;
+        proxy_send_timeout 7d;
+        proxy_read_timeout 7d;
+
+        # Disable buffering for WebSocket
+        proxy_buffering off;
+
+        add_header Access-Control-Allow-Origin * always;
+        add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, PATCH, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Content-Type, Authorization, Upgrade, Connection" always;
+
+        if ($request_method = OPTIONS) {
+            return 204;
+        }
+    }
+
+    # ---------------------------------------------------------------------------
+    # Chat Service API (WebSocket Support)
+    # ---------------------------------------------------------------------------
+    location /chat-service-api/ {
+        set $chat_service ${NGINX_CHAT_SERVICE_HOST};
+        rewrite ^/chat-service-api/(.*)$ /$1 break;
+        proxy_pass http://$chat_service:8000;
+
+        # Standard proxy headers
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Prefix /chat-service-api;
+
+        # WebSocket support
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_cache_bypass $http_upgrade;
+
+        # Extended timeouts for WebSocket connections
+        proxy_connect_timeout 7d;
+        proxy_send_timeout 7d;
+        proxy_read_timeout 7d;
+
+        # Disable buffering for WebSocket
+        proxy_buffering off;
+
+        add_header Access-Control-Allow-Origin * always;
+        add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, PATCH, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Content-Type, Authorization, Upgrade, Connection" always;
+
+        if ($request_method = OPTIONS) {
+            return 204;
+        }
+    }
+
+    # ---------------------------------------------------------------------------
+    # Execution Service API
+    # ---------------------------------------------------------------------------
+    location /execution-service-api/ {
+        set $execution_service ${NGINX_EXECUTION_SERVICE_HOST};
+        rewrite ^/execution-service-api/(.*)$ /$1 break;
+        proxy_pass http://$execution_service:8000;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Prefix /execution-service-api;
+
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+
+        add_header Access-Control-Allow-Origin * always;
+        add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, PATCH, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Content-Type, Authorization" always;
+
+        if ($request_method = OPTIONS) {
+            return 204;
+        }
+    }
+
+    # ==========================================================================
+    # Health Check & Monitoring
+    # ==========================================================================
+    location /health {
+        access_log off;
+        return 200 "healthy\n";
+        add_header Content-Type text/plain;
+    }
+
+    location /nginx-status {
+        stub_status on;
+        access_log off;
+        # Restrict access in production (uncomment and configure)
+        # allow 10.0.0.0/8;
+        # deny all;
+    }
+
+    # ==========================================================================
+    # Error Pages
+    # ==========================================================================
+    error_page 404 /404.html;
+    location = /404.html {
+        root /usr/share/nginx/html;
+        internal;
+    }
+
+    error_page 500 502 503 504 /50x.html;
+    location = /50x.html {
+        root /usr/share/nginx/html;
+        internal;
+    }
+}

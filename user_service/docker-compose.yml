@@ -1,0 +1,84 @@
+# User Service - Standalone Configuration
+# Run independently: cd user_service && docker-compose up
+
+services:
+  user-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: peerprep_user_service
+    ports:
+      - "${USER_SERVICE_PORT:-8004}:8000"
+    environment:
+      - DEBUG=${DEBUG:-true}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1,user-service}
+      - DATABASE_URL=${USER_DATABASE_URL}
+      - DB_HOST=${USER_DB_HOST:-user_db}
+      - DB_PORT=${USER_DB_PORT:-5432}
+      - DB_NAME=${USER_DB_NAME:-user_db}
+      - DB_USER=${USER_DB_USER:-peerprep}
+      - DB_PASSWORD=${USER_DB_PASSWORD:-peerprep_dev_password}
+      # Service-to-service communication URLs
+      - QUESTION_SERVICE_URL=${QUESTION_SERVICE_URL:-http://question-service:8000}
+      - MATCHING_SERVICE_URL=${MATCHING_SERVICE_URL:-http://matching-service:8000}
+      - HISTORY_SERVICE_URL=${HISTORY_SERVICE_URL:-http://history-service:8000}
+      - COLLABORATION_SERVICE_URL=${COLLABORATION_SERVICE_URL:-http://collaboration-service:8000}
+      - CHAT_SERVICE_URL=${CHAT_SERVICE_URL:-http://chat-service:8000}
+      # Email configuration
+      - EMAIL_BACKEND=${EMAIL_BACKEND:-django.core.mail.backends.console.EmailBackend}
+      - EMAIL_HOST=${EMAIL_HOST:-smtp.gmail.com}
+      - EMAIL_PORT=${EMAIL_PORT:-587}
+      - EMAIL_USE_TLS=${EMAIL_USE_TLS:-false}
+      - EMAIL_USE_SSL=${EMAIL_USE_SSL:-false}
+      - EMAIL_HOST_USER=${EMAIL_HOST_USER}
+      - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
+      - DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL:-noreply@peerprep.com}
+      # Email SSO configuration
+      - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-http://localhost:5173}
+      - EMAIL_SSO_CALLBACK_PATH=${EMAIL_SSO_CALLBACK_PATH:-/auth/email-sso}
+      - EMAIL_SSO_TOKEN_TTL_MINUTES=${EMAIL_SSO_TOKEN_TTL_MINUTES:-15}
+      - EMAIL_SSO_SUBJECT=${EMAIL_SSO_SUBJECT:-[PeerPrep] Sign in link}
+    volumes:
+      - ./:/app:rw
+    networks:
+      - shared_network
+      - user_network
+    depends_on:
+      user_db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  user_db:
+    image: postgres:15-alpine
+    container_name: peerprep_user_db
+    environment:
+      - POSTGRES_DB=${USER_DB_NAME:-user_db}
+      - POSTGRES_USER=${USER_DB_USER:-peerprep}
+      - POSTGRES_PASSWORD=${USER_DB_PASSWORD:-peerprep_dev_password}
+    volumes:
+      - user_db_data:/var/lib/postgresql/data
+    networks:
+      - user_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${USER_DB_USER:-peerprep} -d ${USER_DB_NAME:-user_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  user_db_data:
+    name: peerprep_user_db_data
+
+networks:
+  shared_network:
+  user_network:
+    driver: bridge
+    name: peerprep_user_network

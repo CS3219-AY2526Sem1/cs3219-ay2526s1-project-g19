@@ -1,0 +1,13 @@
+{
+    "namespace": "matching",
+    "type": "record",
+    "name": "MatchFound",
+    "fields": [
+        {"name": "match_id", "type": "string"},
+        {"name": "user_id_list", "type": {"items": "string", "type": "array"}},
+        {"name": "topic", "type": "string"},
+        {"name": "difficulty", "type": "string"},
+        {"name": "language", "type": "string"},
+        {"name": "timestamp", "type": "long"}
+    ]
+}

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Email - PeerPrep</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            color: #1a202c;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .email {
+            color: #667eea;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .message {
+            color: #4a5568;
+            line-height: 1.6;
+            margin: 20px 0;
+        }
+
+        .confirm-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 40px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 20px 0;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .confirm-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .info {
+            color: #718096;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+
+        .warning {
+            background: #fff5f5;
+            border-left: 4px solid #fc8181;
+            padding: 12px;
+            margin-top: 20px;
+            text-align: left;
+            font-size: 14px;
+            color: #742a2a;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">PeerPrep</div>
+        <h1>Confirm Your Email Address</h1>
+
+        {% if confirmation %}
+            <p class="message">
+                Please confirm that <span class="email">{{ confirmation.email_address.email }}</span>
+                is your email address for user <strong>{{ confirmation.email_address.user.first_name }}</strong>.
+            </p>
+
+            <form method="post" action="{% url 'account_confirm_email' confirmation.key %}">
+                {% csrf_token %}
+                <button class="confirm-btn" type="submit">Confirm Email Address</button>
+            </form>
+
+            <p class="info">
+                After confirming, you'll be redirected to the PeerPrep application.
+            </p>
+        {% else %}
+            <div class="warning">
+                <strong>Invalid or Expired Link</strong><br>
+                This confirmation link is invalid, already used, or has expired.
+                Please request a new verification email.
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>

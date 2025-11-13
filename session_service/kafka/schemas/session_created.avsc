@@ -1,0 +1,21 @@
+{
+    "namespace": "session",
+    "type": "record",
+    "name": "SessionCreated",
+    "fields": [
+        {"name": "session_id", "type": "string"},
+        {"name": "started_at", "type": "long"},
+        {"name": "user_id_list", "type": {"items": "string", "type": "array"}},
+        {"name": "question_id", "type": "string"},
+        {"name": "title", "type": "string"},
+        {"name": "statement_md", "type": "string"},
+        {"name": "assets", "type": {"items": "string", "type": "array"}},
+        {"name": "topics", "type": {"items": "string", "type": "array"}},
+        {"name": "difficulty", "type": "string"},
+        {"name": "language", "type": "string"},
+        {"name": "company_tags", "type": {"items": "string", "type": "array"}},
+        {"name": "examples", "type": {"items": "string", "type": "array"}},
+        {"name": "constraints", "type": {"items": "string", "type": "array"}},
+        {"name": "timestamp", "type": "long"}
+    ]
+}

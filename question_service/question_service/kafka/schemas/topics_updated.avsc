@@ -1,0 +1,11 @@
+{
+    "namespace": "question",
+    "type": "record",
+    "name": "TopicsUpdated",
+    "fields": [
+        {"name": "topics", "type": {"items": "string", "type": "array"}},
+        {"name": "timestamp", "type": "long"},
+        {"name": "version", "type": "string"}
+    ]
+}
+

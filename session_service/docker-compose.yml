@@ -1,0 +1,121 @@
+# Session Service - Standalone Configuration
+# Run independently: cd session_service && docker-compose up
+
+services:
+  session-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: peerprep_session_service
+    ports:
+      - "${SESSION_SERVICE_PORT:-8003}:8000"
+    env_file:
+      - ../.env
+    environment:
+      - DEBUG=${DEBUG:-true}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1,session-service}
+    volumes:
+      - ./:/app:rw
+    networks:
+      - shared_network
+      - session_network
+    depends_on:
+      session_db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      schema_registry:
+        condition: service_healthy
+      kafka_init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  session_db:
+    image: postgres:15-alpine
+    container_name: peerprep_session_db
+    env_file:
+      - ../.env
+    environment:
+      - POSTGRES_DB=${SESSION_DB_NAME:-session_db}
+      - POSTGRES_USER=${SESSION_DB_USER:-peerprep}
+      - POSTGRES_PASSWORD=${SESSION_DB_PASSWORD:-peerprep_dev_password}
+    volumes:
+      - session_db_data:/var/lib/postgresql/data
+    ports:
+      - 5433:${SESSION_DB_PORT:-5432}
+    networks:
+      - session_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SESSION_DB_USER:-peerprep} -d ${SESSION_DB_NAME:-session_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  session_consumer_question_chosen:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: peerprep_session_kafka_question_chosen
+    command: python -m kafka.consumers.question_chosen
+    volumes:
+      - ./:/app:rw
+      - session_db_data:/var/lib/postgresql/data
+    networks:
+      - shared_network
+      - session_network
+    env_file:
+      - ../.env
+    depends_on:
+      session_db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      schema_registry:
+        condition: service_healthy
+      kafka_init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    environment:
+      - SKIP_DB_SETUP=true
+  session_consumer_session_end:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: peerprep_session_kafka_session_end
+    command: python -m kafka.consumers.session_end
+    volumes:
+      - ./:/app:rw
+      - session_db_data:/var/lib/postgresql/data
+    networks:
+      - shared_network
+      - session_network
+    env_file:
+      - ../.env
+    depends_on:
+      session_db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      schema_registry:
+        condition: service_healthy
+      kafka_init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    environment:
+      - SKIP_DB_SETUP=true
+
+networks:
+  shared_network:
+  session_network:
+    driver: bridge
+    name: peerprep_session_network
+
+volumes:
+  session_db_data:
+    name: session_db_data

@@ -1,0 +1,19 @@
+Hello {{ user.first_name }}!
+
+Thank you for signing up for PeerPrep!
+
+You're receiving this email because you ({{ user.email }}) have registered an account on PeerPrep.
+
+To confirm this is correct and activate your account, please click the link below:
+
+{{ activate_url }}
+
+This link will expire in 3 days.
+
+If you didn't create this account, you can safely ignore this email.
+
+Thank you for using PeerPrep!
+
+---
+PeerPrep Team
+https://peerprep.com

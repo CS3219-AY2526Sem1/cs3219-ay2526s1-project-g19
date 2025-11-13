@@ -1,0 +1,10 @@
+{
+    "namespace": "session",
+    "type": "record",
+    "name": "SessionEnd",
+    "fields": [
+        {"name": "session_id", "type": "string"},
+        {"name": "ended_at", "type": "long"},
+        {"name": "timestamp", "type": "long"}
+    ]
+}

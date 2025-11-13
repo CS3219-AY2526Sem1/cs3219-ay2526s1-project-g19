@@ -1,0 +1,97 @@
+# =============================================================================
+# PeerPrep EC2 Deployment - Terraform Variables Configuration
+# =============================================================================
+# Copy this file to terraform.tfvars and update with your values
+# DO NOT commit terraform.tfvars with real secrets to version control!
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# AWS Configuration
+# -----------------------------------------------------------------------------
+aws_region   = "us-east-1"
+project_name = "peerprep"
+environment  = "ec2-prod"
+
+# -----------------------------------------------------------------------------
+# EC2 Instance Configuration
+# -----------------------------------------------------------------------------
+instance_type = "t3.large" # 2 vCPU, 8GB RAM (recommended)
+# Alternatives:
+#   t3.medium  - 2 vCPU, 4GB RAM (testing only, may run out of memory)
+#   t3.xlarge  - 4 vCPU, 16GB RAM (heavy load, many users)
+
+root_volume_size = 30 # GB (sufficient for OS + Docker + databases)
+root_volume_type = "gp3"
+
+# -----------------------------------------------------------------------------
+# GitHub Repository
+# -----------------------------------------------------------------------------
+github_repo_url = "https://github.com/CS3219-AY2526Sem1/cs3219-ay2526s1-project-g19.git"
+github_branch   = "prod/ec2-prod"
+
+# For private repos, you'll need to add deploy keys or use SSH URL with key setup
+
+# -----------------------------------------------------------------------------
+# Security Configuration
+# -----------------------------------------------------------------------------
+# SSH Access: Restrict to your IP address (optional but recommended)
+# Get your IP: curl ifconfig.me
+# Leave empty [] to disable SSH access (use AWS Session Manager instead)
+allowed_ssh_cidr = ["1.2.3.4/32"] # CHANGE THIS to your IP!
+
+# EC2 Key Pair: Optional, for SSH access
+# If not specified, you can still use AWS Systems Manager Session Manager
+# key_name = "my-ec2-keypair"
+
+# Permanent Elastic IP (OPTIONAL but recommended)
+# Pre-allocate an EIP that survives destroy/apply cycles:
+#   aws ec2 allocate-address --domain vpc --region us-east-1 --tag-specifications 'ResourceType=elastic-ip,Tags=[{Key=Name,Value=peerprep-permanent-eip}]'
+# Then set the allocation ID here. If not set, Terraform will create (and destroy) a new EIP each time.
+elastic_ip_allocation_id = "eipalloc-0d625702e78cc7c87" # 98.91.82.243
+
+# -----------------------------------------------------------------------------
+# Secrets Configuration
+# -----------------------------------------------------------------------------
+# IMPORTANT: Change these before deploying!
+# These secrets will be baked into the EC2 instance via user_data
+
+# PostgreSQL password (used by all services)
+# Minimum 20 characters, use letters, numbers, special chars
+db_password = "CHANGEME_secure_db_password_min_20_chars"
+
+# Django SECRET_KEY (used by Django services)
+# Minimum 50 characters, generate with:
+#   python3 -c "import secrets; print(secrets.token_urlsafe(50))"
+secret_key = "CHANGEME_django_secret_key_min_50_chars_random_generate_with_command_above"
+
+# -----------------------------------------------------------------------------
+# Advanced: Secrets Management (Optional)
+# -----------------------------------------------------------------------------
+# Instead of hardcoding secrets here, you can use AWS Secrets Manager
+# This is more secure for production environments
+
+# use_secrets_manager  = true
+# secrets_manager_name = "peerprep/ec2-prod/env"
+
+# To upload secrets:
+#   cd terraform_ec2
+#   ./scripts/setup-ssm-secrets.sh
+
+# -----------------------------------------------------------------------------
+# Advanced: Custom VPC/Subnet (Optional)
+# -----------------------------------------------------------------------------
+# By default, uses the default VPC in your AWS account
+# Uncomment to use a custom VPC:
+
+# vpc_id    = "vpc-12345678"
+# subnet_id = "subnet-87654321"
+
+# -----------------------------------------------------------------------------
+# Additional Tags (Optional)
+# -----------------------------------------------------------------------------
+# tags = {
+#   Owner       = "YourName"
+#   Department  = "Engineering"
+#   CostCenter  = "CS3219"
+#   Project     = "PeerPrep"
+# }

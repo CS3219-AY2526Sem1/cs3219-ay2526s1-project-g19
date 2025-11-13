@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  width: 100%;
+}
+
+a {
+  font-weight: 500;
+  color: #6cbdff;
+  text-decoration: inherit;
+}
+
+a:hover {
+  color: #6cbdff;
+}
+
+p {
+  color: #D1D5DB;
+}
+
+body {
+  margin: 0;
+  place-items: center;
+  background-color: #111827;
+  font-family: 'ubuntu', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Smooth page transitions */
+.page-transition {
+  animation: fadeIn 0.15s ease-out;
+  will-change: opacity;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Prevent flash of white on navigation */
+#root {
+  background-color: #111827;
+  min-height: 100vh;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+  color: #E5E7EB;
+}
+  
+h2 {
+  font-size: 2.4em;
+  line-height: 1.1;
+  color: #E5E7EB;
+}
+
+h3 {
+  font-size: 1.8em;
+  line-height: 1.1;
+}
+
+h4 {
+  font-size: 1.4em;
+  line-height: 1.1;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent; 
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: 'ubuntu', Tahoma, Geneva, Verdana, sans-serif;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+button:hover {
+  background-color: #0062bd;
+  color: white;
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #f0f0f0;
+  }
+  a:hover {
+    color: #026FD7;
+  }
+  button {
+    background-color: #026FD7;
+    color: white;
+  }
+}
+
+@font-face {
+  font-family: 'Ubuntu';
+  src: url('/fonts/Ubuntu-Regular.ttf'); 
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Ubuntu';
+  src: url('/fonts/Ubuntu-Medium.ttf'); 
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Ubuntu';
+  src: url('/fonts/Ubuntu-Bold.ttf'); 
+  font-weight: 700;
+  font-style: normal;
+}

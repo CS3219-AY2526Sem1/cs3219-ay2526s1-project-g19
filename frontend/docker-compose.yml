@@ -1,0 +1,61 @@
+# Frontend Service - Standalone Configuration
+# =============================================================================
+# DEFAULT: Nginx proxy (production build in Docker)
+#   docker-compose up
+#   Access: http://localhost/user-service-api/...
+#
+# FOR LOCAL DEVELOPMENT: Run Vite outside Docker for hot reload
+#   1. Stop frontend container: docker-compose stop frontend
+#   2. Run locally: cd frontend && npm run dev
+#   3. Access: http://localhost:5173
+#   (vite.config.js proxies API requests to Docker backends)
+# =============================================================================
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: ${FRONTEND_BUILD_STAGE:-production}
+      args:
+        # Build-time: VITE_* variables embedded into JS bundle during build
+        # These are read from the .env file in the parent directory
+        - VITE_QUESTION_SERVICE_URL
+        - VITE_MATCHING_SERVICE_URL
+        - VITE_HISTORY_SERVICE_URL
+        - VITE_USER_SERVICE_URL
+        - VITE_SESSION_SERVICE_URL
+        - VITE_COLLABORATION_SERVICE_URL
+        - VITE_CHAT_SERVICE_URL
+        - VITE_EXECUTION_API
+    container_name: peerprep_frontend
+    ports:
+      - "${FRONTEND_PORT:-80}:${FRONTEND_INTERNAL_PORT:-80}"
+    environment:
+      # Runtime: Nginx variables for proxy configuration (production stage only)
+      - NGINX_USER_SERVICE_HOST
+      - NGINX_QUESTION_SERVICE_HOST
+      - NGINX_MATCHING_SERVICE_HOST
+      - NGINX_HISTORY_SERVICE_HOST
+      - NGINX_SESSION_SERVICE_HOST
+      - NGINX_COLLABORATION_SERVICE_HOST
+      - NGINX_CHAT_SERVICE_HOST
+      - NGINX_EXECUTION_SERVICE_HOST
+    volumes:
+      # Development mode volumes (hot reload)
+      # Comment out or remove in production
+      - ./src:/app/src:ro
+      - ./public:/app/public:ro
+      - /app/node_modules
+    networks:
+      - shared_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${FRONTEND_INTERNAL_PORT:-5173}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  shared_network:

@@ -1,0 +1,39 @@
+# Virtual environment
+/venv/
+.venv
+
+**/db.sqlite3
+
+# Environment files
+.env
+.env.production
+.env.prod
+.env.local
+.env.development
+.env.test
+
+# Secret management files (NEVER commit these!)
+secrets/.env
+**/terraform.tfstate
+**/terraform.tfstate.backup
+**/.terraform.lock.hcl
+**/.terraform/
+
+# Python cache files
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+# Django static files
+**/staticfiles/
+# Django migrations cache
+**/migrations/__pycache__/
+
+# Log files
+**/*.log
+
+# Docker override files
+**/docker-compose.override.yml
+node_modules/
+node_modules
+.vscode/

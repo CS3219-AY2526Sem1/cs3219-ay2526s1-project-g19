@@ -1,0 +1,1967 @@
+[
+  {
+    "model": "question_service.question",
+    "pk": "04132e60-9272-4438-a01d-b735bf1a1001",
+    "fields": {
+      "slug": "sample-q-24-95cb63",
+      "title": "Sample Question 24",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "hard",
+      "topics": [
+        "graphs",
+        "strings"
+      ],
+      "company_tags": [
+        "amazon",
+        "netflix"
+      ],
+      "is_active": true,
+      "created_by": "67c20542-128f-46a8-b731-debc029b0587",
+      "created_at": "2025-10-09T14:42:34.824Z",
+      "updated_at": "2025-10-09T14:42:34.824Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "n = 2, edges = [[1,0]]",
+          "output": "true",
+          "explanation": "There is a path from 0 to 1."
+        },
+        {
+          "input": "n = 6, edges = [[0,1],[0,2],[3,5],[5,4],[4,3]]",
+          "output": "false",
+          "explanation": "There is no valid path from 0 to 5."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 n \u2264 2000",
+        "0 \u2264 edges.length \u2264 5000",
+        "edges[i].length == 2",
+        "0 \u2264 ai, bi < n"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "0f33c0af-9c0a-430f-88c8-53c5257b6117",
+    "fields": {
+      "slug": "sample-q-27-2bc086",
+      "title": "Sample Question 27",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "easy",
+      "topics": [
+        "tree"
+      ],
+      "company_tags": [],
+      "is_active": false,
+      "created_by": "384466ac-c508-40be-9b67-eef557a9bb69",
+      "created_at": "2025-10-09T14:42:34.827Z",
+      "updated_at": "2025-10-09T14:42:34.827Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "root = [3,9,20,null,null,15,7]",
+          "output": "[[3],[9,20],[15,7]]",
+          "explanation": "Level order traversal of the binary tree."
+        },
+        {
+          "input": "root = [1]",
+          "output": "[[1]]",
+          "explanation": "Single node tree."
+        }
+      ],
+      "constraints": [
+        "The number of nodes in the tree is in the range [0, 2000]",
+        "-1000 \u2264 Node.val \u2264 1000"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "156e7a46-f1f0-409f-bd7e-b8845502deb0",
+    "fields": {
+      "slug": "sample-q-22-06631d",
+      "title": "Sample Question 22",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "hard",
+      "topics": [
+        "strings",
+        "arrays"
+      ],
+      "company_tags": [
+        "meta"
+      ],
+      "is_active": true,
+      "created_by": "ef932e62-c512-4bbb-960b-ff921e09b736",
+      "created_at": "2025-10-09T14:42:34.822Z",
+      "updated_at": "2025-10-09T14:42:34.822Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "s = [\"h\",\"e\",\"l\",\"l\",\"o\"]",
+          "output": "[\"o\",\"l\",\"l\",\"e\",\"h\"]",
+          "explanation": "The string is reversed in-place."
+        },
+        {
+          "input": "s = [\"H\",\"a\",\"n\",\"n\",\"a\",\"h\"]",
+          "output": "[\"h\",\"a\",\"n\",\"n\",\"a\",\"H\"]",
+          "explanation": "The palindrome is reversed in-place."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 s.length \u2264 10\u2075",
+        "s[i] is a printable ascii character."
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "15c485ca-ae67-48b6-ba8d-7c2697bda4bc",
+    "fields": {
+      "slug": "sample-q-15-1e44f9",
+      "title": "Sample Question 15",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "medium",
+      "topics": [
+        "tree",
+        "greedy"
+      ],
+      "company_tags": [],
+      "is_active": true,
+      "created_by": "652626c7-ae6a-498a-b645-36b3b95e1c52",
+      "created_at": "2025-10-09T14:42:34.815Z",
+      "updated_at": "2025-10-09T14:42:34.815Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "root = [3,9,20,null,null,15,7]",
+          "output": "[[3],[9,20],[15,7]]",
+          "explanation": "Level order traversal of the binary tree."
+        },
+        {
+          "input": "root = [1]",
+          "output": "[[1]]",
+          "explanation": "Single node tree."
+        }
+      ],
+      "constraints": [
+        "The number of nodes in the tree is in the range [0, 2000]",
+        "-1000 \u2264 Node.val \u2264 1000"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "17fb4a13-3cc7-4a8d-91e8-eb036eee10e0",
+    "fields": {
+      "slug": "sample-q-20-93b6be",
+      "title": "Sample Question 20",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "medium",
+      "topics": [
+        "stack",
+        "technology",
+        "tree"
+      ],
+      "company_tags": [
+        "google"
+      ],
+      "is_active": true,
+      "created_by": "197fbd0b-add9-4462-b320-73d25c22b7e9",
+      "created_at": "2025-10-09T14:42:34.820Z",
+      "updated_at": "2025-10-09T14:42:34.820Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "s = \"()\"",
+          "output": "true",
+          "explanation": "The string has valid parentheses."
+        },
+        {
+          "input": "s = \"()[]{}\"",
+          "output": "true",
+          "explanation": "The string has valid parentheses of all types."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 s.length \u2264 10\u2074",
+        "s consists of parentheses only '()[]{}'."
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "19ef86e3-9ccc-4ae8-a004-7d9967e0a6c2",
+    "fields": {
+      "slug": "sample-q-11-5b16b6",
+      "title": "Sample Question 11",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "medium",
+      "topics": [
+        "dp",
+        "greedy"
+      ],
+      "company_tags": [
+        "amazon",
+        "google"
+      ],
+      "is_active": true,
+      "created_by": "5b0ed0ea-5707-46d8-930e-959538a49bee",
+      "created_at": "2025-10-09T14:42:34.811Z",
+      "updated_at": "2025-10-09T14:42:34.811Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "n = 2",
+          "output": "2",
+          "explanation": "There are two ways to climb to the top: 1. 1 step + 1 step, 2. 2 steps."
+        },
+        {
+          "input": "n = 3",
+          "output": "3",
+          "explanation": "There are three ways to climb to the top: 1. 1 step + 1 step + 1 step, 2. 1 step + 2 steps, 3. 2 steps + 1 step."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 n \u2264 45",
+        "Each step you can either climb 1 or 2 steps."
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "1beb777d-040e-4aa5-9838-5b7f61dd55cd",
+    "fields": {
+      "slug": "sample-q-26-93ba2b",
+      "title": "Sample Question 26",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "medium",
+      "topics": [
+        "stack",
+        "arrays",
+        "greedy"
+      ],
+      "company_tags": [
+        "apple"
+      ],
+      "is_active": false,
+      "created_by": "2d588500-32fa-40d0-9e12-4b4ac3cf3f86",
+      "created_at": "2025-10-09T14:42:34.826Z",
+      "updated_at": "2025-10-09T14:42:34.826Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "s = \"()\"",
+          "output": "true",
+          "explanation": "The string has valid parentheses."
+        },
+        {
+          "input": "s = \"()[]{}\"",
+          "output": "true",
+          "explanation": "The string has valid parentheses of all types."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 s.length \u2264 10\u2074",
+        "s consists of parentheses only '()[]{}'."
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "216ce749-9755-4c7f-b286-ee6d03f4d732",
+    "fields": {
+      "slug": "sample-q-14-7982d6",
+      "title": "Sample Question 14",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "medium",
+      "topics": [
+        "technology",
+        "graphs",
+        "tree"
+      ],
+      "company_tags": [
+        "netflix"
+      ],
+      "is_active": false,
+      "created_by": "7384bb79-4ebb-446c-86d6-e684f5cb7a24",
+      "created_at": "2025-10-09T14:42:34.814Z",
+      "updated_at": "2025-10-09T14:42:34.814Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "nums = [1,2,3,1]",
+          "output": "true",
+          "explanation": "There are two 1's in the array."
+        },
+        {
+          "input": "nums = [1,2,3,4]",
+          "output": "false",
+          "explanation": "All elements are distinct."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 nums.length \u2264 10\u2075",
+        "-10\u2079 \u2264 nums[i] \u2264 10\u2079"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "27503e03-1eb3-4b8b-bec0-c49c165e2c47",
+    "fields": {
+      "slug": "sample-q-49-5d1d92",
+      "title": "Sample Question 49",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "easy",
+      "topics": [
+        "technology"
+      ],
+      "company_tags": [
+        "netflix"
+      ],
+      "is_active": true,
+      "created_by": "d14c27de-28de-4938-a30f-1a165d9fae14",
+      "created_at": "2025-10-09T14:42:34.850Z",
+      "updated_at": "2025-10-09T14:42:34.850Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "nums = [1,2,3,1]",
+          "output": "true",
+          "explanation": "There are two 1's in the array."
+        },
+        {
+          "input": "nums = [1,2,3,4]",
+          "output": "false",
+          "explanation": "All elements are distinct."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 nums.length \u2264 10\u2075",
+        "-10\u2079 \u2264 nums[i] \u2264 10\u2079"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "2a0d337c-025d-4ca7-8c40-dda48556a249",
+    "fields": {
+      "slug": "sample-q-39-088e39",
+      "title": "Sample Question 39",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "hard",
+      "topics": [
+        "graphs",
+        "math"
+      ],
+      "company_tags": [
+        "apple"
+      ],
+      "is_active": true,
+      "created_by": "0cf20ee2-b5c7-4d8a-8a1f-678da8cfffc9",
+      "created_at": "2025-10-09T14:42:34.839Z",
+      "updated_at": "2025-10-09T14:42:34.839Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "n = 2, edges = [[1,0]]",
+          "output": "true",
+          "explanation": "There is a path from 0 to 1."
+        },
+        {
+          "input": "n = 6, edges = [[0,1],[0,2],[3,5],[5,4],[4,3]]",
+          "output": "false",
+          "explanation": "There is no valid path from 0 to 5."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 n \u2264 2000",
+        "0 \u2264 edges.length \u2264 5000",
+        "edges[i].length == 2",
+        "0 \u2264 ai, bi < n"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "32b2d79e-8bf0-45af-8669-0b3980d5a1c1",
+    "fields": {
+      "slug": "sample-q-13-90bf0e",
+      "title": "Sample Question 13",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "easy",
+      "topics": [
+        "technology",
+        "dp"
+      ],
+      "company_tags": [
+        "amazon",
+        "meta"
+      ],
+      "is_active": false,
+      "created_by": "df10c44b-c133-4814-84bf-b3e6576573e0",
+      "created_at": "2025-10-09T14:42:34.813Z",
+      "updated_at": "2025-10-09T14:42:34.813Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "nums = [1,2,3,1]",
+          "output": "true",
+          "explanation": "There are two 1's in the array."
+        },
+        {
+          "input": "nums = [1,2,3,4]",
+          "output": "false",
+          "explanation": "All elements are distinct."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 nums.length \u2264 10\u2075",
+        "-10\u2079 \u2264 nums[i] \u2264 10\u2079"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "35239e94-5a84-45dc-bc1f-a94fdfe2a395",
+    "fields": {
+      "slug": "sample-q-34-cdf1d6",
+      "title": "Sample Question 34",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "easy",
+      "topics": [
+        "technology",
+        "graphs",
+        "dp"
+      ],
+      "company_tags": [
+        "amazon"
+      ],
+      "is_active": false,
+      "created_by": "0d184e1c-8198-42fc-8eff-816b72b919f0",
+      "created_at": "2025-10-09T14:42:34.834Z",
+      "updated_at": "2025-10-09T14:42:34.834Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "nums = [1,2,3,1]",
+          "output": "true",
+          "explanation": "There are two 1's in the array."
+        },
+        {
+          "input": "nums = [1,2,3,4]",
+          "output": "false",
+          "explanation": "All elements are distinct."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 nums.length \u2264 10\u2075",
+        "-10\u2079 \u2264 nums[i] \u2264 10\u2079"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "37163623-99cc-40e7-8be0-8f53850d52db",
+    "fields": {
+      "slug": "sample-q-17-290cb8",
+      "title": "Sample Question 17",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "medium",
+      "topics": [
+        "math",
+        "strings",
+        "dp"
+      ],
+      "company_tags": [
+        "microsoft"
+      ],
+      "is_active": true,
+      "created_by": "623241fa-04ad-4791-9472-75fab2f5d76e",
+      "created_at": "2025-10-09T14:42:34.817Z",
+      "updated_at": "2025-10-09T14:42:34.817Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "x = 123",
+          "output": "321",
+          "explanation": "Reverse the digits of 123 to get 321."
+        },
+        {
+          "input": "x = -123",
+          "output": "-321",
+          "explanation": "Reverse the digits of -123 to get -321."
+        }
+      ],
+      "constraints": [
+        "-2\u00b3\u00b9 \u2264 x \u2264 2\u00b3\u00b9 - 1",
+        "Return 0 if the result overflows."
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "38dce28d-91b8-49da-94fe-82bf4f67fa02",
+    "fields": {
+      "slug": "sample-q-21-2ee140",
+      "title": "Sample Question 21",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "hard",
+      "topics": [
+        "strings",
+        "arrays"
+      ],
+      "company_tags": [
+        "apple",
+        "meta"
+      ],
+      "is_active": true,
+      "created_by": "d82fd6ee-197b-4918-ad5f-5f05a5c1197a",
+      "created_at": "2025-10-09T14:42:34.821Z",
+      "updated_at": "2025-10-09T14:42:34.821Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "s = [\"h\",\"e\",\"l\",\"l\",\"o\"]",
+          "output": "[\"o\",\"l\",\"l\",\"e\",\"h\"]",
+          "explanation": "The string is reversed in-place."
+        },
+        {
+          "input": "s = [\"H\",\"a\",\"n\",\"n\",\"a\",\"h\"]",
+          "output": "[\"h\",\"a\",\"n\",\"n\",\"a\",\"H\"]",
+          "explanation": "The palindrome is reversed in-place."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 s.length \u2264 10\u2075",
+        "s[i] is a printable ascii character."
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "3d30eb07-a7fc-4a77-8b02-b669a78cc87f",
+    "fields": {
+      "slug": "sample-q-12-fa7e31",
+      "title": "Sample Question 12",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "medium",
+      "topics": [
+        "stack"
+      ],
+      "company_tags": [
+        "meta",
+        "amazon"
+      ],
+      "is_active": false,
+      "created_by": "b9159336-3dab-446e-978e-726bd83aaef3",
+      "created_at": "2025-10-09T14:42:34.812Z",
+      "updated_at": "2025-10-09T14:42:34.812Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "s = \"()\"",
+          "output": "true",
+          "explanation": "The string has valid parentheses."
+        },
+        {
+          "input": "s = \"()[]{}\"",
+          "output": "true",
+          "explanation": "The string has valid parentheses of all types."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 s.length \u2264 10\u2074",
+        "s consists of parentheses only '()[]{}'."
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "3ef77b64-4146-4a56-9df4-caed10d91f8f",
+    "fields": {
+      "slug": "sample-q-3-5354ba",
+      "title": "Sample Question 3",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "easy",
+      "topics": [
+        "graphs"
+      ],
+      "company_tags": [
+        "meta"
+      ],
+      "is_active": false,
+      "created_by": "e1011441-6bca-4ede-ac71-c278c0b85722",
+      "created_at": "2025-10-09T14:42:34.802Z",
+      "updated_at": "2025-10-09T14:42:34.802Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "n = 2, edges = [[1,0]]",
+          "output": "true",
+          "explanation": "There is a path from 0 to 1."
+        },
+        {
+          "input": "n = 6, edges = [[0,1],[0,2],[3,5],[5,4],[4,3]]",
+          "output": "false",
+          "explanation": "There is no valid path from 0 to 5."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 n \u2264 2000",
+        "0 \u2264 edges.length \u2264 5000",
+        "edges[i].length == 2",
+        "0 \u2264 ai, bi < n"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "4827554a-dc96-4be9-83fb-190e80cf6eec",
+    "fields": {
+      "slug": "sample-q-44-e7cea4",
+      "title": "Sample Question 44",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "medium",
+      "topics": [
+        "arrays",
+        "dp"
+      ],
+      "company_tags": [],
+      "is_active": true,
+      "created_by": "0a54fa3e-7d86-4a9b-94ee-1fcbfd73cdfe",
+      "created_at": "2025-10-09T14:42:34.845Z",
+      "updated_at": "2025-10-09T14:42:34.845Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "nums = [2, 7, 11, 15], target = 9",
+          "output": "[0, 1]",
+          "explanation": "Because nums[0] + nums[1] == 9, we return [0, 1]."
+        },
+        {
+          "input": "nums = [3, 2, 4], target = 6",
+          "output": "[1, 2]",
+          "explanation": "Because nums[1] + nums[2] == 6, we return [1, 2]."
+        }
+      ],
+      "constraints": [
+        "2 \u2264 nums.length \u2264 10\u2074",
+        "-10\u2079 \u2264 nums[i] \u2264 10\u2079",
+        "-10\u2079 \u2264 target \u2264 10\u2079",
+        "Only one valid answer exists."
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "48bacbd0-85ee-46bb-b0f7-d649f2a00005",
+    "fields": {
+      "slug": "sample-q-8-05d082",
+      "title": "Sample Question 8",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "easy",
+      "topics": [
+        "greedy",
+        "stack",
+        "technology"
+      ],
+      "company_tags": [],
+      "is_active": true,
+      "created_by": "43c58689-3c15-4065-8bcc-e4801b85110d",
+      "created_at": "2025-10-09T14:42:34.808Z",
+      "updated_at": "2025-10-09T14:42:34.808Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "prices = [7,1,5,3,6,4]",
+          "output": "5",
+          "explanation": "Buy on day 2 (price = 1) and sell on day 5 (price = 6), profit = 6-1 = 5."
+        },
+        {
+          "input": "prices = [7,6,4,3,1]",
+          "output": "0",
+          "explanation": "In this case, no transactions are done and the max profit = 0."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 prices.length \u2264 10\u2075",
+        "0 \u2264 prices[i] \u2264 10\u2074"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "53ce8baf-b611-4d47-8272-73de02aca51d",
+    "fields": {
+      "slug": "sample-q-23-154ffa",
+      "title": "Sample Question 23",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "medium",
+      "topics": [
+        "tree",
+        "strings",
+        "stack"
+      ],
+      "company_tags": [
+        "amazon"
+      ],
+      "is_active": true,
+      "created_by": "3b1380af-56c0-413d-9781-5d0e261ed93c",
+      "created_at": "2025-10-09T14:42:34.823Z",
+      "updated_at": "2025-10-09T14:42:34.823Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "root = [3,9,20,null,null,15,7]",
+          "output": "[[3],[9,20],[15,7]]",
+          "explanation": "Level order traversal of the binary tree."
+        },
+        {
+          "input": "root = [1]",
+          "output": "[[1]]",
+          "explanation": "Single node tree."
+        }
+      ],
+      "constraints": [
+        "The number of nodes in the tree is in the range [0, 2000]",
+        "-1000 \u2264 Node.val \u2264 1000"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "56fa4b36-9f0d-4310-b17b-27d1ece1e900",
+    "fields": {
+      "slug": "sample-q-40-bbe419",
+      "title": "Sample Question 40",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "easy",
+      "topics": [
+        "strings",
+        "technology"
+      ],
+      "company_tags": [
+        "apple",
+        "meta"
+      ],
+      "is_active": true,
+      "created_by": "9f87cf0e-da67-45b1-b4dc-5493a08bf9c9",
+      "created_at": "2025-10-09T14:42:34.840Z",
+      "updated_at": "2025-10-09T14:42:34.840Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "s = [\"h\",\"e\",\"l\",\"l\",\"o\"]",
+          "output": "[\"o\",\"l\",\"l\",\"e\",\"h\"]",
+          "explanation": "The string is reversed in-place."
+        },
+        {
+          "input": "s = [\"H\",\"a\",\"n\",\"n\",\"a\",\"h\"]",
+          "output": "[\"h\",\"a\",\"n\",\"n\",\"a\",\"H\"]",
+          "explanation": "The palindrome is reversed in-place."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 s.length \u2264 10\u2075",
+        "s[i] is a printable ascii character."
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "584bbd9a-fad8-40fe-91ea-20f7c9d70fba",
+    "fields": {
+      "slug": "sample-q-43-00bf3e",
+      "title": "Sample Question 43",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "easy",
+      "topics": [
+        "greedy",
+        "arrays"
+      ],
+      "company_tags": [],
+      "is_active": true,
+      "created_by": "64bb9228-3a99-45fb-b64d-5775a4b71408",
+      "created_at": "2025-10-09T14:42:34.844Z",
+      "updated_at": "2025-10-09T14:42:34.844Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "prices = [7,1,5,3,6,4]",
+          "output": "5",
+          "explanation": "Buy on day 2 (price = 1) and sell on day 5 (price = 6), profit = 6-1 = 5."
+        },
+        {
+          "input": "prices = [7,6,4,3,1]",
+          "output": "0",
+          "explanation": "In this case, no transactions are done and the max profit = 0."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 prices.length \u2264 10\u2075",
+        "0 \u2264 prices[i] \u2264 10\u2074"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "58df5d35-d861-4b31-9f87-5b408567edfe",
+    "fields": {
+      "slug": "sample-q-30-af8419",
+      "title": "Sample Question 30",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "easy",
+      "topics": [
+        "technology",
+        "dp",
+        "graphs"
+      ],
+      "company_tags": [
+        "netflix"
+      ],
+      "is_active": true,
+      "created_by": "af21da00-ba1d-43f7-9696-73e63ea84815",
+      "created_at": "2025-10-09T14:42:34.830Z",
+      "updated_at": "2025-10-09T14:42:34.830Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "nums = [1,2,3,1]",
+          "output": "true",
+          "explanation": "There are two 1's in the array."
+        },
+        {
+          "input": "nums = [1,2,3,4]",
+          "output": "false",
+          "explanation": "All elements are distinct."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 nums.length \u2264 10\u2075",
+        "-10\u2079 \u2264 nums[i] \u2264 10\u2079"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "5b5e8142-cb1a-42f1-aa86-7fc6ff3bfe9d",
+    "fields": {
+      "slug": "sample-q-1-65212d",
+      "title": "Sample Question 1",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "easy",
+      "topics": [
+        "strings"
+      ],
+      "company_tags": [
+        "netflix",
+        "meta"
+      ],
+      "is_active": true,
+      "created_by": "1b39ca4e-f6a7-4d41-80ee-69600cf05e30",
+      "created_at": "2025-10-09T14:42:34.799Z",
+      "updated_at": "2025-10-09T14:42:34.800Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "s = [\"h\",\"e\",\"l\",\"l\",\"o\"]",
+          "output": "[\"o\",\"l\",\"l\",\"e\",\"h\"]",
+          "explanation": "The string is reversed in-place."
+        },
+        {
+          "input": "s = [\"H\",\"a\",\"n\",\"n\",\"a\",\"h\"]",
+          "output": "[\"h\",\"a\",\"n\",\"n\",\"a\",\"H\"]",
+          "explanation": "The palindrome is reversed in-place."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 s.length \u2264 10\u2075",
+        "s[i] is a printable ascii character."
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "6d0217ad-a966-4087-8e6c-a03b4d1e54d8",
+    "fields": {
+      "slug": "sample-q-32-473ba6",
+      "title": "Sample Question 32",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "easy",
+      "topics": [
+        "technology"
+      ],
+      "company_tags": [],
+      "is_active": true,
+      "created_by": "0e88358f-fa1c-4431-b1f6-2642ed5d366e",
+      "created_at": "2025-10-09T14:42:34.832Z",
+      "updated_at": "2025-10-09T14:42:34.832Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "nums = [1,2,3,1]",
+          "output": "true",
+          "explanation": "There are two 1's in the array."
+        },
+        {
+          "input": "nums = [1,2,3,4]",
+          "output": "false",
+          "explanation": "All elements are distinct."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 nums.length \u2264 10\u2075",
+        "-10\u2079 \u2264 nums[i] \u2264 10\u2079"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "6d3acdc5-9abf-4b6b-a29a-3ebbeec2d59a",
+    "fields": {
+      "slug": "sample-q-37-d7c48f",
+      "title": "Sample Question 37",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "medium",
+      "topics": [
+        "dp"
+      ],
+      "company_tags": [],
+      "is_active": true,
+      "created_by": "6c79034c-deb3-477a-a444-f5f44888d425",
+      "created_at": "2025-10-09T14:42:34.837Z",
+      "updated_at": "2025-10-09T14:42:34.837Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "n = 2",
+          "output": "2",
+          "explanation": "There are two ways to climb to the top: 1. 1 step + 1 step, 2. 2 steps."
+        },
+        {
+          "input": "n = 3",
+          "output": "3",
+          "explanation": "There are three ways to climb to the top: 1. 1 step + 1 step + 1 step, 2. 1 step + 2 steps, 3. 2 steps + 1 step."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 n \u2264 45",
+        "Each step you can either climb 1 or 2 steps."
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "6e55b752-019e-4dc8-8be2-61cbcfa47054",
+    "fields": {
+      "slug": "sample-q-35-701fec",
+      "title": "Sample Question 35",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "medium",
+      "topics": [
+        "math",
+        "graphs"
+      ],
+      "company_tags": [
+        "microsoft",
+        "meta"
+      ],
+      "is_active": true,
+      "created_by": "603b4379-8348-4200-8422-73c937d6ad86",
+      "created_at": "2025-10-09T14:42:34.835Z",
+      "updated_at": "2025-10-09T14:42:34.835Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "x = 123",
+          "output": "321",
+          "explanation": "Reverse the digits of 123 to get 321."
+        },
+        {
+          "input": "x = -123",
+          "output": "-321",
+          "explanation": "Reverse the digits of -123 to get -321."
+        }
+      ],
+      "constraints": [
+        "-2\u00b3\u00b9 \u2264 x \u2264 2\u00b3\u00b9 - 1",
+        "Return 0 if the result overflows."
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "724539c8-7bc2-42e2-9c1a-290a3a5af30f",
+    "fields": {
+      "slug": "sample-q-10-381c04",
+      "title": "Sample Question 10",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "easy",
+      "topics": [
+        "technology",
+        "stack",
+        "arrays"
+      ],
+      "company_tags": [
+        "google",
+        "apple"
+      ],
+      "is_active": true,
+      "created_by": "bacc1464-d572-4f9d-9ebe-9733a5b0fcf4",
+      "created_at": "2025-10-09T14:42:34.810Z",
+      "updated_at": "2025-10-09T14:42:34.810Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "nums = [1,2,3,1]",
+          "output": "true",
+          "explanation": "There are two 1's in the array."
+        },
+        {
+          "input": "nums = [1,2,3,4]",
+          "output": "false",
+          "explanation": "All elements are distinct."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 nums.length \u2264 10\u2075",
+        "-10\u2079 \u2264 nums[i] \u2264 10\u2079"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "7928df8d-03d9-471a-88df-a89bfb9b69a7",
+    "fields": {
+      "slug": "sample-q-7-eb6f66",
+      "title": "Sample Question 7",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "easy",
+      "topics": [
+        "tree"
+      ],
+      "company_tags": [
+        "microsoft"
+      ],
+      "is_active": true,
+      "created_by": "8364fe53-be16-4f0b-a051-0ad5928c20a1",
+      "created_at": "2025-10-09T14:42:34.807Z",
+      "updated_at": "2025-10-09T14:42:34.807Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "root = [3,9,20,null,null,15,7]",
+          "output": "[[3],[9,20],[15,7]]",
+          "explanation": "Level order traversal of the binary tree."
+        },
+        {
+          "input": "root = [1]",
+          "output": "[[1]]",
+          "explanation": "Single node tree."
+        }
+      ],
+      "constraints": [
+        "The number of nodes in the tree is in the range [0, 2000]",
+        "-1000 \u2264 Node.val \u2264 1000"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "8294ff02-14ab-4a50-aa54-01e081249f9a",
+    "fields": {
+      "slug": "sample-q-16-ca9f9d",
+      "title": "Sample Question 16",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "easy",
+      "topics": [
+        "greedy",
+        "strings",
+        "technology"
+      ],
+      "company_tags": [
+        "microsoft"
+      ],
+      "is_active": true,
+      "created_by": "680207b8-6a80-41cf-8a37-8876863cdbaa",
+      "created_at": "2025-10-09T14:42:34.816Z",
+      "updated_at": "2025-10-09T14:42:34.816Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "prices = [7,1,5,3,6,4]",
+          "output": "5",
+          "explanation": "Buy on day 2 (price = 1) and sell on day 5 (price = 6), profit = 6-1 = 5."
+        },
+        {
+          "input": "prices = [7,6,4,3,1]",
+          "output": "0",
+          "explanation": "In this case, no transactions are done and the max profit = 0."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 prices.length \u2264 10\u2075",
+        "0 \u2264 prices[i] \u2264 10\u2074"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "832febf4-63c8-49b9-a397-0f65350c003d",
+    "fields": {
+      "slug": "sample-q-9-b191ec",
+      "title": "Sample Question 9",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "hard",
+      "topics": [
+        "graphs",
+        "dp"
+      ],
+      "company_tags": [
+        "microsoft"
+      ],
+      "is_active": true,
+      "created_by": "1e43dbb5-56af-4b8c-a37f-b8825ec3e366",
+      "created_at": "2025-10-09T14:42:34.809Z",
+      "updated_at": "2025-10-09T14:42:34.809Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "n = 2, edges = [[1,0]]",
+          "output": "true",
+          "explanation": "There is a path from 0 to 1."
+        },
+        {
+          "input": "n = 6, edges = [[0,1],[0,2],[3,5],[5,4],[4,3]]",
+          "output": "false",
+          "explanation": "There is no valid path from 0 to 5."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 n \u2264 2000",
+        "0 \u2264 edges.length \u2264 5000",
+        "edges[i].length == 2",
+        "0 \u2264 ai, bi < n"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "891ad794-e2a5-43dd-88db-75d85df9e1c9",
+    "fields": {
+      "slug": "sample-q-46-cff93f",
+      "title": "Sample Question 46",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "easy",
+      "topics": [
+        "strings"
+      ],
+      "company_tags": [
+        "google",
+        "apple"
+      ],
+      "is_active": false,
+      "created_by": "30aa3ec7-3f2a-417e-b23f-0945b62bc902",
+      "created_at": "2025-10-09T14:42:34.847Z",
+      "updated_at": "2025-10-09T14:42:34.847Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "s = [\"h\",\"e\",\"l\",\"l\",\"o\"]",
+          "output": "[\"o\",\"l\",\"l\",\"e\",\"h\"]",
+          "explanation": "The string is reversed in-place."
+        },
+        {
+          "input": "s = [\"H\",\"a\",\"n\",\"n\",\"a\",\"h\"]",
+          "output": "[\"h\",\"a\",\"n\",\"n\",\"a\",\"H\"]",
+          "explanation": "The palindrome is reversed in-place."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 s.length \u2264 10\u2075",
+        "s[i] is a printable ascii character."
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "9193bb60-1094-40a0-8897-16519d1acd95",
+    "fields": {
+      "slug": "sample-q-2-b722e6",
+      "title": "Sample Question 2",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "hard",
+      "topics": [
+        "tree",
+        "dp"
+      ],
+      "company_tags": [
+        "meta"
+      ],
+      "is_active": false,
+      "created_by": "2cea5ff8-df05-4088-bfc0-0e86baffb76f",
+      "created_at": "2025-10-09T14:42:34.801Z",
+      "updated_at": "2025-10-09T14:42:34.801Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "root = [3,9,20,null,null,15,7]",
+          "output": "[[3],[9,20],[15,7]]",
+          "explanation": "Level order traversal of the binary tree."
+        },
+        {
+          "input": "root = [1]",
+          "output": "[[1]]",
+          "explanation": "Single node tree."
+        }
+      ],
+      "constraints": [
+        "The number of nodes in the tree is in the range [0, 2000]",
+        "-1000 \u2264 Node.val \u2264 1000"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "91bfbed2-07ac-4352-862a-e1f4992d9837",
+    "fields": {
+      "slug": "sample-q-31-ca7ebf",
+      "title": "Sample Question 31",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "easy",
+      "topics": [
+        "stack"
+      ],
+      "company_tags": [
+        "meta",
+        "apple"
+      ],
+      "is_active": true,
+      "created_by": "a436c8b1-9a94-4bd4-a1c7-e1926917def0",
+      "created_at": "2025-10-09T14:42:34.831Z",
+      "updated_at": "2025-10-09T14:42:34.831Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "s = \"()\"",
+          "output": "true",
+          "explanation": "The string has valid parentheses."
+        },
+        {
+          "input": "s = \"()[]{}\"",
+          "output": "true",
+          "explanation": "The string has valid parentheses of all types."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 s.length \u2264 10\u2074",
+        "s consists of parentheses only '()[]{}'."
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "97f7a656-4160-48b4-b435-d7a40587983b",
+    "fields": {
+      "slug": "sample-q-48-cd54ad",
+      "title": "Sample Question 48",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "hard",
+      "topics": [
+        "tree",
+        "math"
+      ],
+      "company_tags": [],
+      "is_active": false,
+      "created_by": "733c6034-7ff8-47cf-8bb7-859ccee1d9ee",
+      "created_at": "2025-10-09T14:42:34.849Z",
+      "updated_at": "2025-10-09T14:42:34.849Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "root = [3,9,20,null,null,15,7]",
+          "output": "[[3],[9,20],[15,7]]",
+          "explanation": "Level order traversal of the binary tree."
+        },
+        {
+          "input": "root = [1]",
+          "output": "[[1]]",
+          "explanation": "Single node tree."
+        }
+      ],
+      "constraints": [
+        "The number of nodes in the tree is in the range [0, 2000]",
+        "-1000 \u2264 Node.val \u2264 1000"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "97fbfa1b-7146-497a-9850-6430fafdcf56",
+    "fields": {
+      "slug": "sample-q-36-7084f4",
+      "title": "Sample Question 36",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "easy",
+      "topics": [
+        "technology",
+        "arrays"
+      ],
+      "company_tags": [
+        "amazon",
+        "meta"
+      ],
+      "is_active": true,
+      "created_by": "3df688f3-8f37-4c2e-b511-c8422ff171b8",
+      "created_at": "2025-10-09T14:42:34.836Z",
+      "updated_at": "2025-10-09T14:42:34.836Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "nums = [1,2,3,1]",
+          "output": "true",
+          "explanation": "There are two 1's in the array."
+        },
+        {
+          "input": "nums = [1,2,3,4]",
+          "output": "false",
+          "explanation": "All elements are distinct."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 nums.length \u2264 10\u2075",
+        "-10\u2079 \u2264 nums[i] \u2264 10\u2079"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "9ad4c39d-c11c-4709-9500-eb095607eb39",
+    "fields": {
+      "slug": "sample-q-29-16ac90",
+      "title": "Sample Question 29",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "medium",
+      "topics": [
+        "greedy",
+        "technology"
+      ],
+      "company_tags": [],
+      "is_active": true,
+      "created_by": "e2a08522-a83e-4c8f-9c4b-468c2662c04e",
+      "created_at": "2025-10-09T14:42:34.829Z",
+      "updated_at": "2025-10-09T14:42:34.829Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "prices = [7,1,5,3,6,4]",
+          "output": "5",
+          "explanation": "Buy on day 2 (price = 1) and sell on day 5 (price = 6), profit = 6-1 = 5."
+        },
+        {
+          "input": "prices = [7,6,4,3,1]",
+          "output": "0",
+          "explanation": "In this case, no transactions are done and the max profit = 0."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 prices.length \u2264 10\u2075",
+        "0 \u2264 prices[i] \u2264 10\u2074"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "9f22d976-f71a-45c2-8b10-1101fc8f4a4a",
+    "fields": {
+      "slug": "sample-q-25-f34d9b",
+      "title": "Sample Question 25",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "hard",
+      "topics": [
+        "dp"
+      ],
+      "company_tags": [
+        "apple",
+        "google"
+      ],
+      "is_active": true,
+      "created_by": "831c4403-86a1-4af0-912a-7a75c362d9da",
+      "created_at": "2025-10-09T14:42:34.825Z",
+      "updated_at": "2025-10-09T14:42:34.825Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "n = 2",
+          "output": "2",
+          "explanation": "There are two ways to climb to the top: 1. 1 step + 1 step, 2. 2 steps."
+        },
+        {
+          "input": "n = 3",
+          "output": "3",
+          "explanation": "There are three ways to climb to the top: 1. 1 step + 1 step + 1 step, 2. 1 step + 2 steps, 3. 2 steps + 1 step."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 n \u2264 45",
+        "Each step you can either climb 1 or 2 steps."
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "a1c1aec4-b396-4f31-8925-26c679e6444a",
+    "fields": {
+      "slug": "sample-q-19-dd9130",
+      "title": "Sample Question 19",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "easy",
+      "topics": [
+        "math"
+      ],
+      "company_tags": [
+        "microsoft",
+        "amazon"
+      ],
+      "is_active": true,
+      "created_by": "e3a0f5bc-ad6d-43c6-9af6-2ae60aa40231",
+      "created_at": "2025-10-09T14:42:34.819Z",
+      "updated_at": "2025-10-09T14:42:34.819Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "x = 123",
+          "output": "321",
+          "explanation": "Reverse the digits of 123 to get 321."
+        },
+        {
+          "input": "x = -123",
+          "output": "-321",
+          "explanation": "Reverse the digits of -123 to get -321."
+        }
+      ],
+      "constraints": [
+        "-2\u00b3\u00b9 \u2264 x \u2264 2\u00b3\u00b9 - 1",
+        "Return 0 if the result overflows."
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "acce9efd-53bf-4fb3-9f73-28a26005c5b5",
+    "fields": {
+      "slug": "sample-q-6-ff0f2a",
+      "title": "Sample Question 6",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "hard",
+      "topics": [
+        "strings",
+        "stack",
+        "dp"
+      ],
+      "company_tags": [
+        "microsoft"
+      ],
+      "is_active": true,
+      "created_by": "0f057d71-3319-4b92-b202-a8aa5ca2cdbc",
+      "created_at": "2025-10-09T14:42:34.806Z",
+      "updated_at": "2025-10-09T14:42:34.806Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "s = [\"h\",\"e\",\"l\",\"l\",\"o\"]",
+          "output": "[\"o\",\"l\",\"l\",\"e\",\"h\"]",
+          "explanation": "The string is reversed in-place."
+        },
+        {
+          "input": "s = [\"H\",\"a\",\"n\",\"n\",\"a\",\"h\"]",
+          "output": "[\"h\",\"a\",\"n\",\"n\",\"a\",\"H\"]",
+          "explanation": "The palindrome is reversed in-place."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 s.length \u2264 10\u2075",
+        "s[i] is a printable ascii character."
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "b29a9656-33e2-4fe4-a5fd-44fa049c6a83",
+    "fields": {
+      "slug": "sample-q-47-54ac40",
+      "title": "Sample Question 47",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "medium",
+      "topics": [
+        "arrays",
+        "math"
+      ],
+      "company_tags": [
+        "netflix"
+      ],
+      "is_active": false,
+      "created_by": "bd6ea4bd-1457-4196-a9e5-1d358a44a31f",
+      "created_at": "2025-10-09T14:42:34.848Z",
+      "updated_at": "2025-10-09T14:42:34.848Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "nums = [2, 7, 11, 15], target = 9",
+          "output": "[0, 1]",
+          "explanation": "Because nums[0] + nums[1] == 9, we return [0, 1]."
+        },
+        {
+          "input": "nums = [3, 2, 4], target = 6",
+          "output": "[1, 2]",
+          "explanation": "Because nums[1] + nums[2] == 6, we return [1, 2]."
+        }
+      ],
+      "constraints": [
+        "2 \u2264 nums.length \u2264 10\u2074",
+        "-10\u2079 \u2264 nums[i] \u2264 10\u2079",
+        "-10\u2079 \u2264 target \u2264 10\u2079",
+        "Only one valid answer exists."
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "bf385346-7d93-4853-9ec4-f4560360c577",
+    "fields": {
+      "slug": "sample-q-18-3469c2",
+      "title": "Sample Question 18",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "easy",
+      "topics": [
+        "graphs",
+        "strings"
+      ],
+      "company_tags": [
+        "meta"
+      ],
+      "is_active": false,
+      "created_by": "4a066bd3-dd97-4679-8575-73def111f0f3",
+      "created_at": "2025-10-09T14:42:34.818Z",
+      "updated_at": "2025-10-09T14:42:34.818Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "n = 2, edges = [[1,0]]",
+          "output": "true",
+          "explanation": "There is a path from 0 to 1."
+        },
+        {
+          "input": "n = 6, edges = [[0,1],[0,2],[3,5],[5,4],[4,3]]",
+          "output": "false",
+          "explanation": "There is no valid path from 0 to 5."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 n \u2264 2000",
+        "0 \u2264 edges.length \u2264 5000",
+        "edges[i].length == 2",
+        "0 \u2264 ai, bi < n"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "c9093651-2b95-4751-a6e4-f140aa551051",
+    "fields": {
+      "slug": "sample-q-5-f04d15",
+      "title": "Sample Question 5",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "hard",
+      "topics": [
+        "math",
+        "dp",
+        "arrays"
+      ],
+      "company_tags": [],
+      "is_active": true,
+      "created_by": "bd4df855-c8d7-447e-90eb-cc72d9fd83ed",
+      "created_at": "2025-10-09T14:42:34.805Z",
+      "updated_at": "2025-10-09T14:42:34.805Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "x = 123",
+          "output": "321",
+          "explanation": "Reverse the digits of 123 to get 321."
+        },
+        {
+          "input": "x = -123",
+          "output": "-321",
+          "explanation": "Reverse the digits of -123 to get -321."
+        }
+      ],
+      "constraints": [
+        "-2\u00b3\u00b9 \u2264 x \u2264 2\u00b3\u00b9 - 1",
+        "Return 0 if the result overflows."
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "ca530737-9647-418a-bfa6-73f6fa16d2b0",
+    "fields": {
+      "slug": "sample-q-38-a3f260",
+      "title": "Sample Question 38",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "medium",
+      "topics": [
+        "graphs",
+        "strings",
+        "math"
+      ],
+      "company_tags": [],
+      "is_active": true,
+      "created_by": "c2cfc371-eebc-4878-ad9c-41dad6ec5964",
+      "created_at": "2025-10-09T14:42:34.838Z",
+      "updated_at": "2025-10-09T14:42:34.838Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "n = 2, edges = [[1,0]]",
+          "output": "true",
+          "explanation": "There is a path from 0 to 1."
+        },
+        {
+          "input": "n = 6, edges = [[0,1],[0,2],[3,5],[5,4],[4,3]]",
+          "output": "false",
+          "explanation": "There is no valid path from 0 to 5."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 n \u2264 2000",
+        "0 \u2264 edges.length \u2264 5000",
+        "edges[i].length == 2",
+        "0 \u2264 ai, bi < n"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "cb12f38d-2908-4b28-83a2-3b360686df04",
+    "fields": {
+      "slug": "sample-q-41-60327d",
+      "title": "Sample Question 41",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "medium",
+      "topics": [
+        "tree",
+        "technology",
+        "graphs"
+      ],
+      "company_tags": [
+        "meta"
+      ],
+      "is_active": true,
+      "created_by": "cd73a758-a9e2-47dc-9040-b5eb870d4b15",
+      "created_at": "2025-10-09T14:42:34.841Z",
+      "updated_at": "2025-10-09T14:42:34.841Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "root = [3,9,20,null,null,15,7]",
+          "output": "[[3],[9,20],[15,7]]",
+          "explanation": "Level order traversal of the binary tree."
+        },
+        {
+          "input": "root = [1]",
+          "output": "[[1]]",
+          "explanation": "Single node tree."
+        }
+      ],
+      "constraints": [
+        "The number of nodes in the tree is in the range [0, 2000]",
+        "-1000 \u2264 Node.val \u2264 1000"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "d07f4b36-2490-4c46-a45b-27c65fa6a646",
+    "fields": {
+      "slug": "sample-q-33-8d48e0",
+      "title": "Sample Question 33",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "hard",
+      "topics": [
+        "greedy",
+        "technology"
+      ],
+      "company_tags": [
+        "amazon"
+      ],
+      "is_active": true,
+      "created_by": "01c94167-3b73-486c-a641-83c3ca36611d",
+      "created_at": "2025-10-09T14:42:34.833Z",
+      "updated_at": "2025-10-09T14:42:34.833Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "prices = [7,1,5,3,6,4]",
+          "output": "5",
+          "explanation": "Buy on day 2 (price = 1) and sell on day 5 (price = 6), profit = 6-1 = 5."
+        },
+        {
+          "input": "prices = [7,6,4,3,1]",
+          "output": "0",
+          "explanation": "In this case, no transactions are done and the max profit = 0."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 prices.length \u2264 10\u2075",
+        "0 \u2264 prices[i] \u2264 10\u2074"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "d1fad081-123e-409c-b5b7-615b311f46dd",
+    "fields": {
+      "slug": "sample-q-42-99ced5",
+      "title": "Sample Question 42",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "medium",
+      "topics": [
+        "dp",
+        "tree",
+        "stack"
+      ],
+      "company_tags": [
+        "google",
+        "amazon"
+      ],
+      "is_active": false,
+      "created_by": "77122560-59b3-4b51-bbbe-55971a71ac47",
+      "created_at": "2025-10-09T14:42:34.843Z",
+      "updated_at": "2025-10-09T14:42:34.843Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "n = 2",
+          "output": "2",
+          "explanation": "There are two ways to climb to the top: 1. 1 step + 1 step, 2. 2 steps."
+        },
+        {
+          "input": "n = 3",
+          "output": "3",
+          "explanation": "There are three ways to climb to the top: 1. 1 step + 1 step + 1 step, 2. 1 step + 2 steps, 3. 2 steps + 1 step."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 n \u2264 45",
+        "Each step you can either climb 1 or 2 steps."
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "d4eed0f9-6127-4dab-9042-e01d8f967333",
+    "fields": {
+      "slug": "sample-q-0-c74ede",
+      "title": "Sample Question 0",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "hard",
+      "topics": [
+        "tree",
+        "math"
+      ],
+      "company_tags": [],
+      "is_active": true,
+      "created_by": "4911a37c-5ff5-4622-bb84-01c1fa7f15a7",
+      "created_at": "2025-10-09T14:42:34.795Z",
+      "updated_at": "2025-10-09T14:42:34.795Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "root = [3,9,20,null,null,15,7]",
+          "output": "[[3],[9,20],[15,7]]",
+          "explanation": "Level order traversal of the binary tree."
+        },
+        {
+          "input": "root = [1]",
+          "output": "[[1]]",
+          "explanation": "Single node tree."
+        }
+      ],
+      "constraints": [
+        "The number of nodes in the tree is in the range [0, 2000]",
+        "-1000 \u2264 Node.val \u2264 1000"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "e266fcae-8ebe-4033-b952-120f8c8a0f1d",
+    "fields": {
+      "slug": "sample-q-45-c2b7dc",
+      "title": "Sample Question 45",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "hard",
+      "topics": [
+        "graphs",
+        "strings",
+        "tree"
+      ],
+      "company_tags": [],
+      "is_active": true,
+      "created_by": "4ab11c91-0fbb-4878-b2b1-900ef6117372",
+      "created_at": "2025-10-09T14:42:34.846Z",
+      "updated_at": "2025-10-09T14:42:34.846Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "n = 2, edges = [[1,0]]",
+          "output": "true",
+          "explanation": "There is a path from 0 to 1."
+        },
+        {
+          "input": "n = 6, edges = [[0,1],[0,2],[3,5],[5,4],[4,3]]",
+          "output": "false",
+          "explanation": "There is no valid path from 0 to 5."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 n \u2264 2000",
+        "0 \u2264 edges.length \u2264 5000",
+        "edges[i].length == 2",
+        "0 \u2264 ai, bi < n"
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "f23461e3-9f05-4900-ab27-f98ace9812ff",
+    "fields": {
+      "slug": "sample-q-4-a796b6",
+      "title": "Sample Question 4",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "easy",
+      "topics": [
+        "arrays",
+        "dp",
+        "stack"
+      ],
+      "company_tags": [
+        "amazon"
+      ],
+      "is_active": true,
+      "created_by": "10f936b5-cb0c-488d-a690-983aa11e8054",
+      "created_at": "2025-10-09T14:42:34.803Z",
+      "updated_at": "2025-10-09T14:42:34.803Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "nums = [2, 7, 11, 15], target = 9",
+          "output": "[0, 1]",
+          "explanation": "Because nums[0] + nums[1] == 9, we return [0, 1]."
+        },
+        {
+          "input": "nums = [3, 2, 4], target = 6",
+          "output": "[1, 2]",
+          "explanation": "Because nums[1] + nums[2] == 6, we return [1, 2]."
+        }
+      ],
+      "constraints": [
+        "2 \u2264 nums.length \u2264 10\u2074",
+        "-10\u2079 \u2264 nums[i] \u2264 10\u2079",
+        "-10\u2079 \u2264 target \u2264 10\u2079",
+        "Only one valid answer exists."
+      ]
+    }
+  },
+  {
+    "model": "question_service.question",
+    "pk": "fbcad9c7-74ad-48cb-821c-9e64f8e781a8",
+    "fields": {
+      "slug": "sample-q-28-f0cfb4",
+      "title": "Sample Question 28",
+      "statement_md": "Sample statement...",
+      "assets": [],
+      "difficulty": "easy",
+      "topics": [
+        "stack",
+        "greedy",
+        "strings"
+      ],
+      "company_tags": [
+        "google"
+      ],
+      "is_active": true,
+      "created_by": "550d31ee-8856-4617-b927-db6950285605",
+      "created_at": "2025-10-09T14:42:34.828Z",
+      "updated_at": "2025-10-09T14:42:34.828Z",
+      "search_tsv": null,
+      "examples": [
+        {
+          "input": "s = \"()\"",
+          "output": "true",
+          "explanation": "The string has valid parentheses."
+        },
+        {
+          "input": "s = \"()[]{}\"",
+          "output": "true",
+          "explanation": "The string has valid parentheses of all types."
+        }
+      ],
+      "constraints": [
+        "1 \u2264 s.length \u2264 10\u2074",
+        "s consists of parentheses only '()[]{}'."
+      ]
+    }
+  }
+]
