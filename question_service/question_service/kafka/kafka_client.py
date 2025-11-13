@@ -18,10 +18,25 @@ class KafkaClient:
     def consumer_listen(self, topic, handler):
         self.consumer.subscribe([topic])
         logger.info(f"Kafka consumer started. Subscribed to {topic}")
+        logger.debug("Kafka consumer config: %s", consumer_config)
 
         try:
+            poll_count = 0
             while True:
                 msg = self.consumer.poll(1.0)
+                poll_count += 1
+                if msg is None:
+                    logger.debug("Kafka poll #%d returned no message", poll_count)
+                    continue
+                logger.debug(
+                    "Kafka poll #%d got message topic=%s partition=%s offset=%s key_size=%s value_size=%s",
+                    poll_count,
+                    msg.topic(),
+                    msg.partition(),
+                    msg.offset(),
+                    len(msg.key() or b""),
+                    len(msg.value() or b"")
+                )
                 if msg is None:
                     continue
                 if msg.error():
@@ -41,7 +56,21 @@ class KafkaClient:
                     key_preview,
                 )
                 try:
+                    logger.debug(
+                        "Invoking handler %s for topic=%s partition=%s offset=%s",
+                        getattr(handler, "__qualname__", repr(handler)),
+                        msg.topic(),
+                        msg.partition(),
+                        msg.offset()
+                    )
                     handler(msg)
+                    logger.debug(
+                        "Handler %s completed for topic=%s partition=%s offset=%s",
+                        getattr(handler, "__qualname__", repr(handler)),
+                        msg.topic(),
+                        msg.partition(),
+                        msg.offset()
+                    )
                 except Exception:
                     logger.exception(
                         "Kafka message handler crashed for topic=%s partition=%s offset=%s",

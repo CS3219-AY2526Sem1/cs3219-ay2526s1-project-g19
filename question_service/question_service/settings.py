@@ -201,6 +201,8 @@ SPECTACULAR_SETTINGS = {
 }
 
 # Logging configuration
+LOG_LEVEL = "DEBUG" if DEBUG else "INFO"
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -218,22 +220,22 @@ LOGGING = {
     },
     'root': {
         'handlers': ['console'],
-        'level': 'INFO',
+        'level': LOG_LEVEL,
     },
     'loggers': {
         'django': {
             'handlers': ['console'],
-            'level': 'INFO',
+            'level': LOG_LEVEL,
             'propagate': False,
         },
         'question_service.kafka': {
             'handlers': ['console'],
-            'level': 'INFO',
+            'level': LOG_LEVEL,
             'propagate': False,
         },
         'question_service.kafka.consumers': {
             'handlers': ['console'],
-            'level': 'INFO',
+            'level': LOG_LEVEL,
             'propagate': False,
         },
     },
