@@ -21,7 +21,8 @@ const CollaborationPage = () => {
   const [isDragging, setIsDragging] = useState(false)
   const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false)
   const [showPartnerLeftModal, setShowPartnerLeftModal] = useState(false)
-  const [hasPartnerLeft, setHasPartnerLeft] = useState(false)
+  const [isPartnerConnected, setIsPartnerConnected] = useState(true) // Track partner connection status
+  const [partnerHasPermanentlyLeft, setPartnerHasPermanentlyLeft] = useState(false) // Track if partner explicitly left
   const [sessionTime, setSessionTime] = useState(0) // Session time in seconds
   const leftPanelRef = useRef(null)
   const chatSocketRef = useRef(null)
@@ -40,8 +41,9 @@ const CollaborationPage = () => {
       navigate('/matching');
     }
     
-    // Reset partner left states when entering a new session
-    setHasPartnerLeft(false);
+    // Reset partner connection states when entering a new session
+    setIsPartnerConnected(true);
+    setPartnerHasPermanentlyLeft(false);
     setShowPartnerLeftModal(false);
     setShowLeaveConfirmation(false);
     
@@ -143,10 +145,9 @@ const CollaborationPage = () => {
 
   const handleConfirmLeave = async () => {
     try {
-      // If partner already left then end the session
-      if (hasPartnerLeft) {
-        await sessionService.endSession(sessionId);
-      }
+      // When I leave, I DON'T end the session immediately
+      // Partner can choose to stay and work alone, or leave later
+      // Session only ends when BOTH have left
       
       // Emit leave event via chat socket to notify partner
       if (chatSocketRef.current) {
@@ -172,12 +173,9 @@ const CollaborationPage = () => {
   };
 
   const handleLeaveAfterPartnerLeft = async () => {
-    try {
-      // Partner already left, end the session
-      await sessionService.endSession(sessionId);
-    } catch (error) {
-      console.error('Failed to end session:', error);
-    }
+    // Partner has left, now I'm leaving too
+    // Don't call endSession() - the collaboration service will handle it
+    // when the room becomes empty (after INACTIVE_SESSION_TIMEOUT)
     
     // Disconnect socket and navigate
     if (chatSocketRef.current) {
@@ -192,16 +190,41 @@ const CollaborationPage = () => {
     navigate('/matching');
   };
 
-  // Memoized callback for partner-left event to prevent re-rendering issues
+  // Callback for partner permanently leaving (explicit leave action)
   const handlePartnerLeft = useCallback((data) => {
     console.log("Received partner-left event:", data);
     
-    // Only show modal if not already shown and partner hasn't already left
-    if (!showPartnerLeftModal && !hasPartnerLeft) {
-      setHasPartnerLeft(true);
+    // Mark that partner has permanently left (not just disconnected)
+    if (!partnerHasPermanentlyLeft) {
+      setIsPartnerConnected(false);
+      setPartnerHasPermanentlyLeft(true);
       setShowPartnerLeftModal(true);
     }
-  }, [showPartnerLeftModal, hasPartnerLeft]);
+  }, [partnerHasPermanentlyLeft]);
+
+  // Callback for partner temporarily disconnecting (network issue, refresh, etc.)
+  const handlePartnerDisconnected = useCallback((data) => {
+    console.log("Received partner-disconnected event:", data);
+    
+    // Only show disconnection status, don't show modal
+    // Partner might reconnect
+    setIsPartnerConnected(false);
+  }, []);
+
+  // Callback for partner rejoining after disconnect
+  const handlePartnerRejoined = useCallback((data) => {
+    console.log("Received user-joined event:", data);
+    
+    // If it's the partner, mark them as connected again
+    if (data.username === partnerName || data.username !== username) {
+      setIsPartnerConnected(true);
+      // If they were marked as permanently left but reconnected, reset that
+      if (partnerHasPermanentlyLeft) {
+        setPartnerHasPermanentlyLeft(false);
+        setShowPartnerLeftModal(false);
+      }
+    }
+  }, [partnerName, username, partnerHasPermanentlyLeft]);
 
   // If no session data, show loading
   if (!sessionData || !sessionId) {
@@ -332,6 +355,8 @@ const CollaborationPage = () => {
               currentUsername={username}
               socketRef={chatSocketRef}
               onPartnerLeft={handlePartnerLeft}
+              onPartnerDisconnected={handlePartnerDisconnected}
+              onPartnerRejoined={handlePartnerRejoined}
             />
           </div>
         </div>
