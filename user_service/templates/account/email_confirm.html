@@ -108,7 +108,7 @@
                 is your email address for user <strong>{{ confirmation.email_address.user.first_name }}</strong>.
             </p>
 
-            <form method="post" action="{% url 'account_confirm_email' confirmation.key %}">
+            <form method="post" action="{{ request.get_full_path }}">
                 {% csrf_token %}
                 <button class="confirm-btn" type="submit">Confirm Email Address</button>
             </form>
