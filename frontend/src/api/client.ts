@@ -16,6 +16,9 @@ export const matchingClient = axios.create({
 export const questionClient = axios.create({
   ...API_CONFIGS.question,
   headers: COMMON_HEADERS,
+  paramsSerializer: {
+    indexes: null,
+  },
 });
 
 export const sessionClient = axios.create({

@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 # --- Config / constants ---
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
-EXPIRY_TIME = 1800  # 30 minutes - matching collaboration service
+EXPIRY_TIME = 3600
 SERVICE_PREFIX = os.getenv("SERVICE_PREFIX", "/chat-service-api")
 if SERVICE_PREFIX and not SERVICE_PREFIX.startswith("/"):
     SERVICE_PREFIX = "/" + SERVICE_PREFIX
@@ -80,7 +80,17 @@ def register_handlers(sio: socketio.AsyncServer):
             await sio.emit("error", {"message": "username and room are required"}, to=sid)
             return
 
+        # Get current users in room before joining
+        room_users_key = f"room_users_{room}"
+        existing_users = await redis_client.smembers(room_users_key)
+        
+        # Enter the room
         await sio.enter_room(sid, room)
+        
+        # Add user to room tracking
+        await redis_client.sadd(room_users_key, username)
+        await redis_client.expire(room_users_key, EXPIRY_TIME)
+        
         logger.info(f"[{id(sio)}] {username} joined room: {room}")
 
         # Replay last messages
@@ -96,7 +106,16 @@ def register_handlers(sio: socketio.AsyncServer):
             msg_data = MessageData.from_dict(msg_dict)
             await sio.emit("receive", msg_data.to_dict(), to=sid)
 
-        # Notify room
+        # Notify the joining user about existing users first
+        for existing_user in existing_users:
+            if existing_user != username:  # Don't announce self
+                existing_user_notification = MessageData(
+                    message=f"{existing_user} has joined the session",
+                    username="ChatBot"
+                )
+                await sio.emit("receive", existing_user_notification.to_dict(), to=sid)
+
+        # Then notify room about new user joining
         join_notification = MessageData(
             message=f"{username} has joined the session",
             username="ChatBot"
@@ -136,6 +155,10 @@ def register_handlers(sio: socketio.AsyncServer):
             await sio.emit("error", {"message": "username and room are required"}, to=sid)
             return
 
+        # Remove user from room tracking
+        room_users_key = f"room_users_{room}"
+        await redis_client.srem(room_users_key, username)
+        
         await sio.leave_room(sid, room)
         leave_notification = MessageData(
             message=f"{username} has left the room",

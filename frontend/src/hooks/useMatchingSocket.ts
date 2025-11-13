@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { matchingService } from '../api/services/matchingService';
+import { sessionService } from '../api/services/sessionService';
 import { useAuth } from '../contexts/AuthContext';
 import type { MatchingSelections, WebSocketMessage, SessionData } from '../types';
 
@@ -16,6 +17,7 @@ export const useMatchingSocket = () => {
   const [matchFound, setMatchFound] = useState(false);
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isRelaxed, setIsRelaxed] = useState(false);
 
   // Connect WebSocket and setup listeners
   const connectWebSocket = useCallback((): Promise<boolean> => {
@@ -33,7 +35,7 @@ export const useMatchingSocket = () => {
       }
 
       try {
-        const ws = matchingService.createWebSocket(user.id);
+        const ws = matchingService.createWebSocket();
         wsRef.current = ws;
 
         const timeout = setTimeout(() => {
@@ -61,11 +63,14 @@ export const useMatchingSocket = () => {
             setMatchFound(true);
             setSessionData(message.session);
             setIsMatching(false);
+            setIsRelaxed(false);
           } else if (message.status === 'timeout') {
             setIsMatching(false);
             setError('No match found within the time limit');
+            setIsRelaxed(false);
           } else if (message.status === 'relax') {
-            console.log('Language matching relaxed');
+            console.log('Language matching relaxed - now including secondary languages');
+            setIsRelaxed(true);
           }
         };
 
@@ -98,10 +103,20 @@ export const useMatchingSocket = () => {
       return;
     }
 
+    // check active sessions
+    const session = await sessionService.getActiveSession()
+    console.log(`${session}`)
+    if (session) {
+      setError('Already in active session, rejoin from home screen');
+      setIsMatching(false);
+      return
+    }
+
     console.log('Starting matching with criteria:', criteria);
     setError(null);
     setIsMatching(true);
     setMatchFound(false);
+    setIsRelaxed(false); // Reset relaxed state when starting new match
 
     try {
       // Connect WebSocket
@@ -134,10 +149,7 @@ export const useMatchingSocket = () => {
 
       // Join queue 
       console.log('Joining queue via API...');
-      await matchingService.addToQueue({
-        user_id: user.id,
-        criteria,
-      });
+      await matchingService.addToQueue(criteria);
       console.log('Successfully joined queue');
       
     } catch (error: any) {
@@ -165,11 +177,13 @@ export const useMatchingSocket = () => {
     if (!user?.id) return;
 
     try {
-      await matchingService.removeFromQueue({ user_id: user.id });
+      await matchingService.removeFromQueue();
       setIsMatching(false);
+      setIsRelaxed(false); // Reset relaxed state when canceling
     } catch (error: any) {
       if (error.response?.status === 404) {
         setIsMatching(false);
+        setIsRelaxed(false);
       }
     }
 
@@ -184,6 +198,7 @@ export const useMatchingSocket = () => {
     setSessionData(null);
     setError(null);
     setIsMatching(false);
+    setIsRelaxed(false);
   }, []);
 
   // Cleanup
@@ -200,6 +215,7 @@ export const useMatchingSocket = () => {
     matchFound,
     sessionData,
     error,
+    isRelaxed,
     startMatching,
     cancelMatching,
     resetMatch,

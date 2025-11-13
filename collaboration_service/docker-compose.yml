@@ -19,6 +19,8 @@ services:
       - USER_SERVICE_URL=${USER_SERVICE_URL:-http://user-service:8000}
       - QUESTION_SERVICE_URL=${QUESTION_SERVICE_URL:-http://question-service:8000}
       - CHAT_SERVICE_URL=${CHAT_SERVICE_URL:-http://chat-service:8000}
+      - SESSION_SERVICE_URL=${SESSION_SERVICE_URL:-http://session-service:8000}
+      - INACTIVE_SESSION_TIMEOUT=300
     volumes:
       - ./:/app:rw
     networks:
@@ -34,6 +36,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    env_file:
+      - ../.env
 
   collaboration_redis:
     image: redis:7-alpine
@@ -49,6 +53,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    env_file:
+      - ../.env
 
 volumes:
   collaboration_redis_data:

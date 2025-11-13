@@ -888,6 +888,7 @@ module "ecs_service_frontend" {
     NGINX_QUESTION_SERVICE_HOST      = "question-service.${module.service_discovery.namespace_name}"
     NGINX_MATCHING_SERVICE_HOST      = "matching-service.${module.service_discovery.namespace_name}"
     NGINX_HISTORY_SERVICE_HOST       = "history-service.${module.service_discovery.namespace_name}"
+    NGINX_SESSION_SERVICE_HOST       = "session-service.${module.service_discovery.namespace_name}"
     NGINX_COLLABORATION_SERVICE_HOST = "collaboration-service.${module.service_discovery.namespace_name}"
     NGINX_CHAT_SERVICE_HOST          = "chat-service.${module.service_discovery.namespace_name}"
 
@@ -896,6 +897,7 @@ module "ecs_service_frontend" {
     VITE_MATCHING_SERVICE_URL      = "/matching-service-api"
     VITE_HISTORY_SERVICE_URL       = "/history-service-api"
     VITE_USER_SERVICE_URL          = "/user-service-api"
+    VITE_SESSION_SERVICE_URL       = "/session-service-api"
     VITE_COLLABORATION_SERVICE_URL = "/collaboration-service-api"
     VITE_CHAT_SERVICE_URL          = "/chat-service-api"
   }

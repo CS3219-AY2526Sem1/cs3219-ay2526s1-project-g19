@@ -3,7 +3,7 @@ from pydantic import Field
 
 
 class Settings(BaseSettings):
-    env: str = "prd"
+    environment: str = "production"
     session_db_host: str
     session_db_port: int
     session_db_name: str
@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     session_db_password: str
 
     # Kafka variables
-    group_id: str = Field(alias="SESSION_GROUP_ID")
+    session_group_id: str = Field(alias="SESSION_GROUP_ID")
     topic_question_chosen: str
     topic_session_created: str
     topic_session_end: str
@@ -22,7 +22,8 @@ class Settings(BaseSettings):
     sasl_username: str
     sasl_password: str
 
-    model_config = SettingsConfigDict(env_file=".env")
+    # jwt decode
+    secret_key: str
 
     @property
     def pg_url(self) -> str:

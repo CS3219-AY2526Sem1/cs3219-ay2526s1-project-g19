@@ -2,16 +2,61 @@ import QuestionHeader from "./questionpanel/QuestionHeader";
 import QuestionDescription from "./questionpanel/QuestionDescription";
 
 export default function QuestionPanel({ questionData }) {
+  // Helper function to parse topics (can be string or array)
+  const parseTopics = (topics) => {
+    if (!topics) return [];
+    if (Array.isArray(topics)) return topics;
+    if (typeof topics === 'string') {
+      try {
+        const parsed = JSON.parse(topics);
+        return Array.isArray(parsed) ? parsed : [topics];
+      } catch {
+        // If not valid JSON, split by comma or return as single item
+        return topics.includes(',') ? topics.split(',').map(t => t.trim()) : [topics];
+      }
+    }
+    return [];
+  };
+
+  // Helper function to parse examples (can be string or array)
+  const parseExamples = (examples) => {
+    if (!examples) return [];
+    if (Array.isArray(examples)) return examples;
+    if (typeof examples === 'string') {
+      try {
+        return JSON.parse(examples);
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
+  // Helper function to parse constraints (can be string or array)
+  const parseConstraints = (constraints) => {
+    if (!constraints) return [];
+    if (Array.isArray(constraints)) return constraints;
+    if (typeof constraints === 'string') {
+      try {
+        return JSON.parse(constraints);
+      } catch {
+        // Split by newline or return as single item
+        return constraints.includes('\n') ? constraints.split('\n').filter(c => c.trim()) : [constraints];
+      }
+    }
+    return [];
+  };
+
   const question = questionData ? {
     title: questionData.title || "Untitled Question",
     difficulty: questionData.difficulty || "unknown",
-    topics: questionData.topics || [],
+    topics: parseTopics(questionData.topics),
     statement_md: questionData.statement_md || "No description available",
-    examples: questionData.examples || [],
-    constraints: questionData.constraints || [],
+    examples: parseExamples(questionData.examples),
+    constraints: parseConstraints(questionData.constraints),
     assets: questionData.assets || [],
-    company_tags: questionData.company_tags || [],
-    stats: {
+    company_tags: questionData.company_tags || "None",
+    stats: questionData.stats || {
       views: 0,
       attempts: 0,
       solved: 0,
@@ -54,7 +99,7 @@ export default function QuestionPanel({ questionData }) {
   };
 
   return (
-      <div className="bg-primary-secondary/80 backdrop-blur-xl">
+      <div className="bg-primary-secondary/80 backdrop-blur-xl h-full">
         <QuestionHeader
           title={question.title}
           difficulty={question.difficulty}

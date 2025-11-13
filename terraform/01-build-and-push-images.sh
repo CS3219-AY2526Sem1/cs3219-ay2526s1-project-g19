@@ -98,7 +98,7 @@ for i in "${!SERVICE_NAMES[@]}"; do
         build_args+=(
             --build-arg "VITE_QUESTION_SERVICE_URL=${VITE_QUESTION_SERVICE_URL:-/question-service-api}"
             --build-arg "VITE_MATCHING_SERVICE_URL=${VITE_MATCHING_SERVICE_URL:-/matching-service-api}"
-            --build-arg "VITE_HISTORY_SERVICE_URL=${VITE_HISTORY_SERVICE_URL:-/history-service-api}"
+            --build-arg "VITE_SESSION_SERVICE_URL=${VITE_SESSION_SERVICE_URL:-/session-service-api}"
             --build-arg "VITE_USER_SERVICE_URL=${VITE_USER_SERVICE_URL:-/user-service-api}"
             --build-arg "VITE_COLLABORATION_SERVICE_URL=${VITE_COLLABORATION_SERVICE_URL:-/collaboration-service-api}"
             --build-arg "VITE_CHAT_SERVICE_URL=${VITE_CHAT_SERVICE_URL:-/chat-service-api}"

@@ -16,6 +16,62 @@
 # 1. Development: Copy .env.sample to .env
 #    Production: Copy .env.prod.sample to .env.prod
 # =============================================================================
+services:
+  kafka:
+    image: confluentinc/cp-kafka:8.1.0
+    container_name: peerprep_kafka
+    hostname: peerprep-kafka
+    environment:
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_NODE_ID: 1
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@peerprep_kafka:29093"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_LISTENERS: "PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://peerprep_kafka:29092"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: Deq3DYCfTWCkO7cIJRLCYQ
+    networks:
+      - shared_network
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "bash", "-c", "kafka-broker-api-versions --bootstrap-server peerprep-kafka:29092 > /dev/null 2>&1"]
+      interval: 5s
+      retries: 30
+      start_period: 30s
+      timeout: 10s
+  schema_registry:
+    image: confluentinc/cp-schema-registry:8.1.0
+    container_name: peerprep_schema_registry
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://peerprep_kafka:29092
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+    networks:
+      - shared_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/subjects"]
+      interval: 5s
+      retries: 20
+  kafka_init:
+    image: confluentinc/cp-kafka:8.1.0
+    container_name: peerprep_kafka_init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    env_file: .env
+    volumes:
+      - ./kafka-init-topics.sh:/scripts/kafka-init-topics.sh:ro
+    entrypoint: ["/bin/bash", "/scripts/kafka-init-topics.sh"]
+    networks:
+      - shared_network
 
 include:
   # Frontend
@@ -32,3 +88,6 @@ include:
 
 networks:
   shared_network:
+
+volumes:
+  kafka-data:

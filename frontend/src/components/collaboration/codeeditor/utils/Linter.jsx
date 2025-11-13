@@ -365,22 +365,34 @@ export const createJavaLinter = () => {
             if (trimmed.startsWith('//') || trimmed.startsWith('/*') || trimmed.length === 0) return
 
             // Class declarations
-            const classMatch = trimmed.match(/^(?:public\s+)?class\s+(\w+)/)
+            const classMatch = trimmed.match(/^(?:public\s+)?(?:abstract\s+)?(?:final\s+)?class\s+(\w+)/)
             if (classMatch) definedNames.add(classMatch[1])
 
+            // Interface declarations
+            const interfaceMatch = trimmed.match(/^(?:public\s+)?interface\s+(\w+)/)
+            if (interfaceMatch) definedNames.add(interfaceMatch[1])
+
             // Method declarations
-            const methodMatch = trimmed.match(/^(?:public|private|protected)?\s*(?:static\s+)?(?:\w+\s+)?(\w+)\s*\(/)
+            const methodMatch = trimmed.match(/^(?:public|private|protected)?\s*(?:static\s+)?(?:final\s+)?(?:\w+(?:<[^>]+>)?)\s+(\w+)\s*\(/)
             if (methodMatch && !javaBuiltins.has(methodMatch[1])) {
                 definedNames.add(methodMatch[1])
             }
 
-            // Variable declarations
-            const varMatch = trimmed.match(/^(?:public|private|protected)?\s*(?:static\s+)?(?:final\s+)?(?:int|double|float|long|short|byte|char|boolean|String|\w+)\s+(\w+)/)
+            // Variable declarations (including generics)
+            const varMatch = trimmed.match(/^(?:public|private|protected)?\s*(?:static\s+)?(?:final\s+)?(?:int|double|float|long|short|byte|char|boolean|String|[\w<>]+)\s+(\w+)\s*[=;]/)
             if (varMatch) definedNames.add(varMatch[1])
 
             // For loop variables
-            const forMatch = trimmed.match(/^for\s*\(\s*(?:int|double|float|String|\w+)\s+(\w+)/)
+            const forMatch = trimmed.match(/^for\s*\(\s*(?:int|double|float|String|var|\w+)\s+(\w+)/)
             if (forMatch) definedNames.add(forMatch[1])
+
+            // Enhanced for loop
+            const enhancedForMatch = trimmed.match(/^for\s*\(\s*(?:\w+)\s+(\w+)\s*:/)
+            if (enhancedForMatch) definedNames.add(enhancedForMatch[1])
+
+            // Try-catch variables
+            const catchMatch = trimmed.match(/^catch\s*\(\s*\w+\s+(\w+)\s*\)/)
+            if (catchMatch) definedNames.add(catchMatch[1])
 
             // Import statements
             const importMatch = trimmed.match(/^import\s+(?:static\s+)?[\w.]+\.(\w+|\*)/)
@@ -389,21 +401,106 @@ export const createJavaLinter = () => {
             }
         })
 
+        // Check overall brace balance
+        const totalOpenBraces = (text.match(/\{/g) || []).length
+        const totalCloseBraces = (text.match(/\}/g) || []).length
+        
+        if (totalOpenBraces !== totalCloseBraces) {
+            for (let i = lines.length - 1; i >= 0; i--) {
+                if (lines[i].includes('{') || lines[i].includes('}')) {
+                    const from = view.state.doc.line(i + 1).from
+                    const to = view.state.doc.line(i + 1).to
+                    diagnostics.push({
+                        from,
+                        to,
+                        severity: 'error',
+                        message: `Unmatched braces: ${totalOpenBraces} opening, ${totalCloseBraces} closing`
+                    })
+                    break
+                }
+            }
+        }
+
         // Second pass: check for errors
         lines.forEach((line, lineIndex) => {
             const from = view.state.doc.line(lineIndex + 1).from
             const to = view.state.doc.line(lineIndex + 1).to
-
-            // Missing semicolons
             const trimmed = line.trim()
-            if (trimmed.length > 0 &&
-                !trimmed.endsWith(';') &&
-                !trimmed.endsWith('{') &&
-                !trimmed.endsWith('}') &&
-                !trimmed.startsWith('//') &&
-                !trimmed.startsWith('/*') &&
-                !trimmed.startsWith('@') &&
-                !/^(if|else|for|while|do|switch|try|catch|finally|public|private|protected|class|interface|package|import)\b/.test(trimmed)) {
+
+            // Skip empty lines, comments, and annotations
+            if (!trimmed || trimmed.startsWith('//') || trimmed.startsWith('/*') || trimmed.startsWith('*') || trimmed.startsWith('@')) return
+
+            // Check what type of statement this is
+            const endsWithSemicolon = trimmed.endsWith(';')
+            const endsWithBrace = trimmed.endsWith('{') || trimmed.endsWith('}')
+            const endsWithColon = trimmed.endsWith(':')
+            
+            // Keywords that DON'T need semicolons
+            const controlKeywords = /^(if|else|for|while|do|switch|try|catch|finally|synchronized)\s*[\(\{]/.test(trimmed)
+            const declarationKeywords = /^(public|private|protected|abstract|final|static|class|interface|enum)\s/.test(trimmed)
+            const packageOrImport = /^(package|import)\s/.test(trimmed)
+            const caseOrDefault = /^(case\s+.+|default)\s*:/.test(trimmed)
+            
+            // Check if line is inside a method body (count braces before this line)
+            const textBeforeLine = text.substring(0, from)
+            const openBracesBeforeLine = (textBeforeLine.match(/\{/g) || []).length
+            const closeBracesBeforeLine = (textBeforeLine.match(/\}/g) || []).length
+            const isInsideMethod = openBracesBeforeLine > closeBracesBeforeLine
+            
+            // Statements that NEED semicolons
+            const isVariableDeclaration = /^(?:public|private|protected)?\s*(?:static|final)?\s*(?:int|double|float|long|short|byte|char|boolean|String|var|\w+(?:<[^>]+>)?)\s+\w+(?:\s*=\s*.+)?$/.test(trimmed)
+            const isAssignment = /^\w+(?:\[\w*\]|\.\w+)*\s*[+\-*/%&|^]?=\s*.+$/.test(trimmed) && !trimmed.includes('(')
+            const isReturnStatement = /^return\b/.test(trimmed)
+            const isThrowStatement = /^throw\b/.test(trimmed)
+            const isBreakOrContinue = /^(break|continue)\b/.test(trimmed)
+            const isMethodCall = /^\w+(?:\.\w+)*\s*\([^)]*\)$/.test(trimmed) || /^(?:this|super)\.\w+\s*\([^)]*\)$/.test(trimmed)
+            const isObjectCreation = /^new\s+\w+(?:<[^>]+>)?\s*\([^)]*\)$/.test(trimmed)
+            const isArrayInit = /^\w+\s*\[\s*\w*\s*\]\s*=\s*new\s+/.test(trimmed)
+            const isIncrementDecrement = /^(?:\+\+|--)\w+$|^\w+(?:\+\+|--)$/.test(trimmed)
+            const isSystemOut = /^System\.(?:out|err)\.\w+\s*\([^)]*\)$/.test(trimmed)
+            const isAssertStatement = /^assert\s+/.test(trimmed)
+            
+            // Check if this is a method declaration (has parameters and opens a brace on same or next line)
+            const isMethodDeclaration = /^(?:public|private|protected)?\s*(?:static|final)?\s*\w+(?:<[^>]+>)?\s+\w+\s*\([^)]*\)(?:\s*throws\s+[\w,\s]+)?$/.test(trimmed)
+            
+            // Check if next non-empty line starts with a brace (indicates method declaration)
+            let nextNonEmptyLine = ''
+            for (let i = lineIndex + 1; i < lines.length; i++) {
+                const nextTrimmed = lines[i].trim()
+                if (nextTrimmed.length > 0 && !nextTrimmed.startsWith('//') && !nextTrimmed.startsWith('/*')) {
+                    nextNonEmptyLine = nextTrimmed
+                    break
+                }
+            }
+            const nextLineStartsWithBrace = nextNonEmptyLine.startsWith('{')
+            
+            // Comprehensive semicolon check
+            const needsSemicolon = (
+                !endsWithSemicolon &&
+                !endsWithBrace &&
+                !endsWithColon &&
+                !controlKeywords &&
+                !declarationKeywords &&
+                !packageOrImport &&
+                !caseOrDefault &&
+                !(isMethodDeclaration && (endsWithBrace || nextLineStartsWithBrace)) &&
+                isInsideMethod &&
+                (
+                    isVariableDeclaration ||
+                    isAssignment ||
+                    isReturnStatement ||
+                    isThrowStatement ||
+                    isBreakOrContinue ||
+                    isMethodCall ||
+                    isObjectCreation ||
+                    isArrayInit ||
+                    isIncrementDecrement ||
+                    isSystemOut ||
+                    isAssertStatement
+                )
+            )
+
+            if (needsSemicolon) {
                 diagnostics.push({
                     from: to - 1,
                     to,
@@ -412,25 +509,23 @@ export const createJavaLinter = () => {
                 })
             }
 
-            // Unmatched braces/parentheses
-            const openBraces = (line.match(/\{/g) || []).length
-            const closeBraces = (line.match(/\}/g) || []).length
+            // Check for unmatched parentheses
             const openParens = (line.match(/\(/g) || []).length
             const closeParens = (line.match(/\)/g) || []).length
 
-            if (openBraces !== closeBraces || openParens !== closeParens) {
+            if (openParens !== closeParens) {
                 diagnostics.push({
                     from,
                     to,
                     severity: 'error',
-                    message: 'Unmatched braces or parentheses'
+                    message: 'Unmatched parentheses'
                 })
             }
 
             // Assignment in condition (= instead of ==)
             if (/^\s*if\s*\([^)]*[^=!<>]=[^=]/.test(line)) {
                 const equalPos = line.indexOf('=')
-                if (equalPos > 0) {
+                if (equalPos > 0 && line[equalPos + 1] !== '=' && line[equalPos - 1] !== '!') {
                     diagnostics.push({
                         from: from + equalPos,
                         to: from + equalPos + 1,
@@ -440,16 +535,71 @@ export const createJavaLinter = () => {
                 }
             }
 
-            // Missing access modifiers for class members
-            if (/^\s*(int|double|float|String|\w+)\s+\w+/.test(trimmed) &&
-                !/^\s*(public|private|protected)/.test(trimmed) &&
-                !trimmed.includes('main(')) {
-                diagnostics.push({
-                    from,
-                    to,
-                    severity: 'warning',
-                    message: 'Consider adding access modifier (public, private, protected)'
-                })
+            // String comparison using ==
+            if (/\bString\s+\w+/.test(text) && /==\s*["']|["']\s*==/.test(line)) {
+                const eqPos = line.indexOf('==')
+                if (eqPos >= 0) {
+                    diagnostics.push({
+                        from: from + eqPos,
+                        to: from + eqPos + 2,
+                        severity: 'warning',
+                        message: 'Use .equals() for String comparison instead of =='
+                    })
+                }
+            }
+
+            // Missing break in switch case
+            if (/^case\s+.+:/.test(trimmed) || /^default\s*:/.test(trimmed)) {
+                const nextLines = lines.slice(lineIndex + 1, Math.min(lineIndex + 6, lines.length))
+                const hasBreak = nextLines.some(l => /^\s*(break|return|throw)\b/.test(l))
+                const hasNextCase = nextLines.some(l => /^\s*(case\s+|default\s*:|})/.test(l))
+                
+                if (!hasBreak && hasNextCase) {
+                    const nextCaseIndex = nextLines.findIndex(l => /^\s*(case\s+|default\s*:)/.test(l))
+                    if (nextCaseIndex > 0) {
+                        diagnostics.push({
+                            from,
+                            to,
+                            severity: 'warning',
+                            message: 'Missing break statement in switch case (potential fall-through)'
+                        })
+                    }
+                }
+            }
+
+            // Unused imports (simple check)
+            const importMatch = trimmed.match(/^import\s+(?:static\s+)?([\w.]+)\.(\w+|\*);/)
+            if (importMatch && importMatch[2] !== '*') {
+                const importedName = importMatch[2]
+                const regex = new RegExp(`\\b${importedName}\\b`)
+                const restOfCode = lines.slice(lineIndex + 1).join('\n')
+                if (!regex.test(restOfCode)) {
+                    diagnostics.push({
+                        from,
+                        to,
+                        severity: 'info',
+                        message: `Unused import: ${importedName}`
+                    })
+                }
+            }
+
+            // Potential NullPointerException
+            const hasNullableMethodCall = /\w+\.\w+\s*\(/.test(trimmed) && !trimmed.includes('null')
+            if (hasNullableMethodCall && isInsideMethod) {
+                const variableName = trimmed.match(/^(\w+)\./)?.[1]
+                if (variableName && !javaBuiltins.has(variableName)) {
+                    const precedingLines = lines.slice(Math.max(0, lineIndex - 5), lineIndex).join('\n')
+                    const hasNullCheck = new RegExp(`${variableName}\\s*[!=]=\\s*null`).test(precedingLines)
+                    
+                    if (!hasNullCheck) {
+                        diagnostics.push({
+                            from,
+                            to,
+                            severity: 'info',
+                            message: `Consider null-checking '${variableName}' before method call`
+                        })
+                    }
+                }
             }
         })
 
@@ -870,10 +1020,3 @@ export const createLinter = (language) => {
             return null
     }
 }
-
-// Legacy exports
-export const pythonLinter = createPythonLinter()
-export const javascriptLinter = createJavaScriptLinter()
-export const javaLinter = createJavaLinter()
-export const cLinter = createCLinter()
-export const cppLinter = createCppLinter()

@@ -1,8 +1,5 @@
-from typing import Self
 from uuid import UUID
-from pydantic import BaseModel, field_validator, model_validator
-
-from service.django_question_service import django_question_service
+from pydantic import BaseModel
 
 
 class MatchingCriteriaSchema(BaseModel):

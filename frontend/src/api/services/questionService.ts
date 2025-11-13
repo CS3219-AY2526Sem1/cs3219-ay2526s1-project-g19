@@ -19,4 +19,30 @@ export const questionService = {
       return [];
     }
   },
+  getQuestion: async (questionId: string) => {
+    try {
+      const response = await questionClient.get(`/api/questions/${questionId}`);
+      return response.data;
+    } catch (error) {
+      console.warn(`Error fetching question with ID ${questionId}:`, error);
+      return null;
+    }
+  },
+  getQuestions: async (params?: {
+    page?: number;
+    page_size?: number;
+    search?: string;
+    difficulty?: string[];
+    topics?: string[];
+    sort?: string;
+    order?: string;
+  }) => {
+    try {
+      const response = await questionClient.get('/api/questions', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching questions:', error);
+      throw error;
+    }
+  },
 };

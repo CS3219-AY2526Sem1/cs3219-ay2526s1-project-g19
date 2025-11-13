@@ -30,6 +30,8 @@ class RedisController:
         )
         self.general_queue_key="gen_queue:"
         self.websocket_service = websocket_service
+        self.topics_key="topics"
+        self.difficulty_key="difficulty"
 
         ## Add operations
 
@@ -133,8 +135,8 @@ class RedisController:
             criteria=MatchingCriteriaEnum.PRIMARY_LANG,
             user_id=matched_user_id
         )
-        if user_primary_lang and matched_user_primary_lang:
-            if user_primary_lang[0] == matched_user_primary_lang[0]:
+        if user_primary_lang and matched_user_primary_lang and \
+            user_primary_lang[0] == matched_user_primary_lang[0]:
                 language = user_primary_lang[0]
         else:
             user_lang = set(user_primary_lang + await self.get_criteria_list(
@@ -147,6 +149,7 @@ class RedisController:
             ))
             language_set = user_lang & matched_user_lang
             language = language_set.pop()
+        
         return MatchedCriteriaSchema(
             topic=topic_set.pop(),
             difficulty=difficulty_set.pop(),
@@ -183,7 +186,6 @@ class RedisController:
         pubsub = self.get_pubsub()
         await pubsub.subscribe(settings.topic_session_created)
         logger.info(f"Subscribed to session created events on {settings.topic_session_created}")
-        logger.info(settings.redis_host)
 
         async for msg in pubsub.listen():
             if msg["type"] == "message":
@@ -320,6 +322,16 @@ class RedisController:
         await self.redis.set(user_relax_language_key, "1", ex=RELAX_LANGUAGE_DURATION)
         return
 
+    async def update_topics(self, topics: list[str]) -> None:
+        logger.info(f"Updating topics in redis: {topics}")
+        await self.redis.set(self.topics_key, json.dumps(topics))
+        return
+
+    async def update_difficulties(self, difficulties: list[str]) -> None:
+        logger.info(f"Updating difficulties in redis: {difficulties}")
+        await self.redis.set(self.difficulty_key, json.dumps(difficulties))
+        return
+
     ## Query operations
 
     async def store_all_union_set(
@@ -415,6 +427,14 @@ class RedisController:
         await self.redis.delete(intersection_key, temp_set_key)
         return UUID(earliest_user)
 
+    async def get_topics(self) -> list[str]:
+        topics = json.loads(await self.redis.get(self.topics_key) or "[]")
+        return topics
+
+    async def get_difficulties(self) -> list[str]:
+        difficulties = json.loads(await self.redis.get(self.difficulty_key) or "[]")
+        return difficulties
+
     ## Remove operations
 
     async def remove_from_general_queue(self, user_id: UUID) -> None:
@@ -468,52 +488,6 @@ class RedisController:
 
     def _get_user_relax_language_timer_key(self, user_id: UUID) -> str:
         return f"relax:user:{user_id}"
-
-    ## Debug
-
-    async def debug_show(self) -> dict:
-        r = self.redis
-        result = {}
-
-        keys = await r.keys('*')
-        if not keys:
-            return {"message": "Redis is empty."}
-
-        for key in sorted(keys):
-            key_type = await r.type(key)
-            entry = {"type": key_type, "values": None}
-
-            try:
-                if key_type == 'set':
-                    values = await r.smembers(key)
-                    entry["values"] = sorted(values)
-
-                elif key_type == 'zset':
-                    values = await r.zrange(key, 0, -1, withscores=True)
-                    entry["values"] = [{"member": member, "score": int(score)} for member, score in values]
-
-                elif key_type == 'list':
-                    values = await r.lrange(key, 0, -1)
-                    entry["values"] = values
-
-                elif key_type == 'hash':
-                    values = await r.hgetall(key)
-                    entry["values"] = values
-
-                else:  # string
-                    value = await r.get(key)
-                    entry["values"] = value
-
-            except Exception as e:
-                entry["error"] = str(e)
-
-            result[key] = entry
-
-        return result
-
-    async def clear_redis(self) -> None:
-        await self.redis.flushdb()
-        return
 
 
 redis_controller = RedisController()

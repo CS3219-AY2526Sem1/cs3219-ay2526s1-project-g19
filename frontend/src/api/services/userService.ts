@@ -32,6 +32,10 @@ export const userService = {
   logout: () =>
     userClient.post('api/auth/logout/'),
 
+  // Reset password
+  resetPassword: (data: { new_password: string }) =>
+    userClient.put('api/auth/reset-password/', data),
+
   // Email SSO - Request magic link
   requestEmailSSO: (data: EmailSSORequest) =>
     userClient.post<EmailSSOResponse>('api/auth/email-sso/', data),

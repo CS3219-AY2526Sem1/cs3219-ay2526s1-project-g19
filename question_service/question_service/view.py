@@ -241,10 +241,20 @@ class QuestionViewSet(mixins.ListModelMixin,
             # sorting
             order = request.query_params.get("order", "desc")
             prefix = "-" if order == "desc" else ""
+            # ensure business ordering for difficulty: easy < medium < hard
+            qs = qs.annotate(
+                difficulty_order=Case(
+                    When(difficulty="easy", then=Value(0)),
+                    When(difficulty="medium", then=Value(1)),
+                    When(difficulty="hard", then=Value(2)),
+                    default=Value(3),
+                    output_field=FloatField(),
+                )
+            )
             sort_map = {
                 "newest": f"{prefix}created_at",
                 "created_at": f"{prefix}created_at",
-                "difficulty": f"{prefix}difficulty",
+                "difficulty": f"{prefix}difficulty_order",
                 "percentage_solved": f"{prefix}percentage_solved_annot",
                 "popularity": f"{prefix}popularity",
                 "topic": f"{prefix}title",

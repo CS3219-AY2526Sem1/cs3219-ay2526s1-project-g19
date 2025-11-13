@@ -40,7 +40,7 @@ const ErrorMessage = ({ errorsArray }) => {
     return (
         <div className="!text-red-400 text-xs mt-1 space-y-0.5">
             {errorsArray.map((err, idx) => (
-                <p key={idx}> <MessageSquareWarning className="inline w-3 h-3 mr-1"/> {err}</p>
+                <p key={idx}> <MessageSquareWarning className="inline w-3 h-3 mr-1 text-red-400"/> {err}</p>
             ))}
         </div>
     );
@@ -305,13 +305,17 @@ const LoginForm = () => {
 
                     {/* Login Error Message */}
                     {loginError && (
-                        <div className="text-red-400 text-sm text-center p-2 bg-red-50 rounded">
+                        <div className="text-red-400 text-sm text-center p-2 bg-red-900/20 border border-red-800 rounded">
                             <MessageSquareWarning className="inline w-4 h-4 mr-1"/>
                             {loginError}
                         </div>
                     )}
 
-                    <button type="submit" disabled={isLoading}>
+                    <button 
+                        type="submit" 
+                        disabled={isLoading}
+                        className="w-full bg-primary hover:bg-primary-dark text-white font-medium py-2 px-4 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
                         {isLoading ? "Signing In..." : "Sign In"}
                     </button>
                 </form>

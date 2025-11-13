@@ -6,4 +6,10 @@ class QuestionServiceConfig(AppConfig):
     
     def ready(self):
         import question_service.admin
+        # Import Kafka signal handlers only after apps are ready
+        try:
+            import question_service.kafka.signals  # noqa: F401
+        except Exception:
+            # Kafka may be disabled/not configured in some environments
+            pass
 
