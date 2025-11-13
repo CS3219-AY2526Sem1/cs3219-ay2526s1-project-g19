@@ -87,9 +87,19 @@ def register_handlers(sio: socketio.AsyncServer):
         # Enter the room
         await sio.enter_room(sid, room)
         
+        # Map sid to username for this room
+        sid_mapping_key = f"sid_to_user_{room}_{sid}"
+        await redis_client.set(sid_mapping_key, username, ex=EXPIRY_TIME)
+        
         # Add user to room tracking
         await redis_client.sadd(room_users_key, username)
         await redis_client.expire(room_users_key, EXPIRY_TIME)
+        
+        # Notify others that user has joined (or rejoined)
+        await sio.emit("user-joined", {
+            "username": username,
+            "message": f"{username} has joined the room"
+        }, room=room, skip_sid=sid)
         
         logger.info(f"[{id(sio)}] {username} joined room: {room}")
 
@@ -155,9 +165,16 @@ def register_handlers(sio: socketio.AsyncServer):
             await sio.emit("error", {"message": "username and room are required"}, to=sid)
             return
 
+        # Clean up sid mapping
+        sid_mapping_key = f"sid_to_user_{room}_{sid}"
+        await redis_client.delete(sid_mapping_key)
+        
         # Remove user from room tracking
         room_users_key = f"room_users_{room}"
         await redis_client.srem(room_users_key, username)
+        
+        # Check remaining users in room
+        remaining_users = await redis_client.smembers(room_users_key)
         
         await sio.leave_room(sid, room)
         leave_notification = MessageData(
@@ -166,18 +183,54 @@ def register_handlers(sio: socketio.AsyncServer):
         )
         await sio.emit("receive", leave_notification.to_dict(), room=room)
         
-        # Also send partner-left event to trigger modal on partner's side
+        # Notify partner that user left (they can choose to stay or leave)
         await sio.emit("partner-left", {
             "username": username,
-            "message": f"{username} has left the collaboration room"
+            "message": f"{username} has left the collaboration room",
+            "remaining_users": list(remaining_users)
         }, room=room, skip_sid=sid)
         
-        logger.info(f"[{id(sio)}] {username} left room: {room}")
+        logger.info(f"[{id(sio)}] {username} left room: {room}. Remaining users: {remaining_users}")
 
     @sio.event
     async def disconnect(sid):
+        """Handle unexpected disconnections (e.g., network issues, browser closed)"""
         logger.info(f"[{id(sio)}] User disconnected: {sid}")
         print(f"[{id(sio)}] User disconnected: {sid}")
+        
+        # Try to find which room(s) and username this sid was in
+        # Search for sid mapping keys
+        try:
+            pattern = f"sid_to_user_*_{sid}"
+            keys = []
+            async for key in redis_client.scan_iter(match=pattern):
+                keys.append(key)
+            
+            for key in keys:
+                # Extract room from key: "sid_to_user_{room}_{sid}"
+                parts = key.split("_")
+                if len(parts) >= 4:
+                    room = "_".join(parts[3:-1])  # Handle room IDs with underscores
+                    username = await redis_client.get(key)
+                    
+                    if username:
+                        # Remove user from room tracking (temporary disconnect)
+                        # Don't emit partner-left on disconnect - they might reconnect
+                        room_users_key = f"room_users_{room}"
+                        await redis_client.srem(room_users_key, username)
+                        
+                        # Clean up sid mapping
+                        await redis_client.delete(key)
+                        
+                        # Emit disconnection notice (not permanent leave)
+                        await sio.emit("partner-disconnected", {
+                            "username": username,
+                            "message": f"{username} has been disconnected"
+                        }, room=room)
+                        
+                        logger.info(f"[{id(sio)}] {username} disconnected from room: {room}")
+        except Exception as e:
+            logger.error(f"Error handling disconnect cleanup: {e}")
 
 # Register handlers on both servers
 register_handlers(sio_root)

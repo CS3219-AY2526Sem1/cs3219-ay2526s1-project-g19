@@ -128,6 +128,24 @@ async def cleanup_on_startup():
         if user_keys:
             await redis.delete(*user_keys)
             logger.info(f"Cleaned up {len(user_keys)} room user entries on startup")
+        
+        # Get all sid-to-user mapping keys
+        sid_keys = await redis.keys("collab_sid_to_user:*")
+        if sid_keys:
+            await redis.delete(*sid_keys)
+            logger.info(f"Cleaned up {len(sid_keys)} sid-to-user mapping entries on startup")
+        
+        # Get all session users tracking keys
+        session_user_keys = await redis.keys("session_all_users:*")
+        if session_user_keys:
+            await redis.delete(*session_user_keys)
+            logger.info(f"Cleaned up {len(session_user_keys)} session users tracking entries on startup")
+        
+        # Get all users who left tracking keys
+        who_left_keys = await redis.keys("session_users_who_left:*")
+        if who_left_keys:
+            await redis.delete(*who_left_keys)
+            logger.info(f"Cleaned up {len(who_left_keys)} users who left tracking entries on startup")
 
         # Get all inactive session keys
         inactive_keys = await redis.keys("inactive_collab_session:*")
@@ -184,6 +202,8 @@ async def schedule_session_end(room: str):
                     
                     # Clean up Redis data
                     await redis.delete(room_users_key)
+                    await redis.delete(f"session_all_users:{room}")
+                    await redis.delete(f"session_users_who_left:{room}")
                     await redis.delete(f"room:{room}:code")
                     await redis.delete(f"inactive_collab_session:{room}")
                     
@@ -191,6 +211,8 @@ async def schedule_session_end(room: str):
                     logger.error(f"Error producing session end event for {room}: {e}")
                     # Clean up Redis even if Kafka fails
                     await redis.delete(room_users_key)
+                    await redis.delete(f"session_all_users:{room}")
+                    await redis.delete(f"session_users_who_left:{room}")
                     await redis.delete(f"room:{room}:code")
                     await redis.delete(f"inactive_collab_session:{room}")
             else:
@@ -221,6 +243,51 @@ async def cancel_session_end(room: str):
     logger.info(f"Cancelled session end for {room}")
 
 
+async def end_session_now(room: str):
+    """Immediately end a session (when all users have permanently left)."""
+    try:
+        # Cancel any pending timeout tasks
+        if room in session_end_tasks:
+            session_end_tasks[room].cancel()
+            del session_end_tasks[room]
+        
+        # Produce session end event to Kafka
+        ended_at = int(datetime.now().timestamp() * 1000)
+        timestamp = ended_at
+        
+        value = {
+            "session_id": room,
+            "ended_at": ended_at,
+            "timestamp": timestamp
+        }
+        
+        kafka_client.produce(
+            topic=settings.topic_session_end,
+            key=room,
+            value=value,
+            serializer=session_end_serializer
+        )
+        
+        kafka_client.producer.flush()
+        logger.info(f"Successfully ended session {room} immediately (all users left)")
+        
+        # Clean up Redis data
+        room_users_key = f"collab_room_users:{room}"
+        session_users_key = f"session_all_users:{room}"
+        users_who_left_key = f"session_users_who_left:{room}"
+        
+        await redis.delete(room_users_key)
+        await redis.delete(session_users_key)
+        await redis.delete(users_who_left_key)
+        await redis.delete(f"room:{room}:code")
+        await redis.delete(f"inactive_collab_session:{room}")
+        
+        logger.info(f"Cleaned up Redis data for session {room}")
+        
+    except Exception as e:
+        logger.error(f"Error ending session {room} immediately: {e}")
+
+
 @sio.event
 async def connect(sid, environ):
     """Handle a new WebSocket connection."""
@@ -239,15 +306,30 @@ async def join(sid, data):
 
     await sio.enter_room(sid, join_data.room)
     
-    # Track user in room
+    # Track user in room (socket ID)
     room_users_key = f"collab_room_users:{join_data.room}"
     await redis.sadd(room_users_key, sid)
     await redis.expire(room_users_key, EXPIRY_TIME)
     
+    # Map socket ID to user ID for tracking permanent leaves
+    sid_to_user_key = f"collab_sid_to_user:{join_data.room}:{sid}"
+    await redis.setex(sid_to_user_key, EXPIRY_TIME, join_data.user_id)
+    
+    # Initialize the set of users who participated in this session
+    # This tracks ALL users who have ever been in the session
+    session_users_key = f"session_all_users:{join_data.room}"
+    await redis.sadd(session_users_key, join_data.user_id)
+    await redis.expire(session_users_key, EXPIRY_TIME)
+    
+    # Remove this user from "who left" set since they're rejoining
+    users_who_left_key = f"session_users_who_left:{join_data.room}"
+    await redis.srem(users_who_left_key, join_data.user_id)
+    logger.info(f"User {join_data.user_id} rejoined, removed from 'who left' tracking")
+    
     # Cancel any scheduled session end
     await cancel_session_end(join_data.room)
     
-    logger.info(f"SID {sid} joined room {join_data.room}")
+    logger.info(f"User {join_data.user_id} (SID {sid}) joined room {join_data.room}")
 
     # Send cached code if it exists
     cache_key = f"room:{join_data.room}:code"
@@ -295,9 +377,23 @@ async def leave(sid, data):
         await sio.emit("error", error.to_dict(), to=sid)
         return
 
+    # Get the user ID from the socket mapping
+    sid_to_user_key = f"collab_sid_to_user:{room}:{sid}"
+    user_id = await redis.get(sid_to_user_key)
+    
+    if user_id:
+        # Mark this user as having left (permanently, until they rejoin)
+        users_who_left_key = f"session_users_who_left:{room}"
+        await redis.sadd(users_who_left_key, user_id)
+        await redis.expire(users_who_left_key, EXPIRY_TIME)
+        logger.info(f"User {user_id} marked as left in room {room}")
+    
     # Remove user from room tracking
     room_users_key = f"collab_room_users:{room}"
     await redis.srem(room_users_key, sid)
+    
+    # Clean up socket-to-user mapping
+    await redis.delete(sid_to_user_key)
 
     # Notify other users in the room that this user left
     await sio.emit("user_left", {"userId": sid}, room=room, skip_sid=sid)
@@ -305,11 +401,30 @@ async def leave(sid, data):
     await sio.leave_room(sid, room)
     logger.info(f"SID {sid} left room {room}")
     
-    # Check if room is now empty
+    # Check if we should end the session
     remaining_users = await redis.scard(room_users_key)
+    
     if remaining_users == 0:
-        logger.info(f"Room {room} is now empty, scheduling session end in {INACTIVE_SESSION_TIMEOUT}s")
-        await schedule_session_end(room)
+        # Room is empty - check if ALL users who participated have left at least once
+        session_users_key = f"session_all_users:{room}"
+        users_who_left_key = f"session_users_who_left:{room}"
+        
+        all_users = await redis.smembers(session_users_key)
+        users_who_left = await redis.smembers(users_who_left_key)
+        
+        # Convert bytes to strings if needed
+        all_users = {u.decode() if isinstance(u, bytes) else u for u in all_users}
+        users_who_left = {u.decode() if isinstance(u, bytes) else u for u in users_who_left}
+        
+        logger.info(f"Room {room} empty. All users: {all_users}, Users who left: {users_who_left}")
+        
+        # End session only if everyone has left at least once
+        if all_users and all_users.issubset(users_who_left):
+            logger.info(f"All users have left room {room}. Ending session immediately.")
+            await end_session_now(room)
+        else:
+            logger.info(f"Room {room} empty but not all users have left yet. Scheduling timeout.")
+            await schedule_session_end(room)
 
 
 @sio.event

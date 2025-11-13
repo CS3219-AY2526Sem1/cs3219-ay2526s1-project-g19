@@ -4,7 +4,7 @@ import ChatHeader from "./chatbox/ChatHeader";
 import ChatMessagesList from "./chatbox/ChatMessagesList";
 import ChatInput from "./chatbox/ChatInput";
 
-const ChatBox = ({ room, currentUsername, socketRef, onPartnerLeft }) => {
+const ChatBox = ({ room, currentUsername, socketRef, onPartnerLeft, onPartnerDisconnected, onPartnerRejoined }) => {
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
   const messagesEndRef = useRef(null);
@@ -49,9 +49,25 @@ const ChatBox = ({ room, currentUsername, socketRef, onPartnerLeft }) => {
       }
     };
 
+    const handlePartnerDisconnected = (data) => {
+      console.log("Partner disconnected:", data);
+      if (onPartnerDisconnected) {
+        onPartnerDisconnected(data);
+      }
+    };
+
+    const handleUserJoined = (data) => {
+      console.log("User joined:", data);
+      if (onPartnerRejoined) {
+        onPartnerRejoined(data);
+      }
+    };
+
     chatSocketRef.current.on("connect", handleConnect);
     chatSocketRef.current.on("receive", handleReceive);
     chatSocketRef.current.on("partner-left", handlePartnerLeft);
+    chatSocketRef.current.on("partner-disconnected", handlePartnerDisconnected);
+    chatSocketRef.current.on("user-joined", handleUserJoined);
 
     window.addEventListener("beforeunload", handleBeforeUnload);
     window.addEventListener("unload", handleBeforeUnload);
@@ -62,6 +78,8 @@ const ChatBox = ({ room, currentUsername, socketRef, onPartnerLeft }) => {
         chatSocketRef.current.off("connect", handleConnect);
         chatSocketRef.current.off("receive", handleReceive);
         chatSocketRef.current.off("partner-left", handlePartnerLeft);
+        chatSocketRef.current.off("partner-disconnected", handlePartnerDisconnected);
+        chatSocketRef.current.off("user-joined", handleUserJoined);
       }
       
       handleBeforeUnload();
