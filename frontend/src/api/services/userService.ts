@@ -10,7 +10,9 @@ import type {
   EmailSSORequest,
   EmailSSOResponse,
   EmailSSOVerifyRequest,
-  EmailSSOVerifyResponse
+  EmailSSOVerifyResponse,
+  EmailVerificationSendResponse,
+  EmailVerificationStatusResponse
 } from '../../types';
 
 export const userService = {
@@ -43,6 +45,13 @@ export const userService = {
   // Email SSO - Verify token and login
   verifyEmailSSO: (data: EmailSSOVerifyRequest) =>
     userClient.post<EmailSSOVerifyResponse>('api/auth/email-sso/verify/', data),
+
+  // Email verification - status + send/resend link
+  getEmailVerificationStatus: () =>
+    userClient.get<EmailVerificationStatusResponse>('api/email-verification/status/'),
+
+  sendVerificationEmail: () =>
+    userClient.post<EmailVerificationSendResponse>('api/email-verification/send/'),
 
   // Get public profile information by user ID
   getPublicProfile: (userId: string) =>

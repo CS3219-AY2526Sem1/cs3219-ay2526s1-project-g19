@@ -82,3 +82,14 @@ export interface EmailSSOVerifyResponse {
   tokens: Tokens;
   session_profile: SessionProfile;
 }
+
+// Email Verification
+export interface EmailVerificationSendResponse {
+  detail: string;
+  email: string;
+}
+
+export interface EmailVerificationStatusResponse {
+  is_verified: boolean;
+  email: string;
+}

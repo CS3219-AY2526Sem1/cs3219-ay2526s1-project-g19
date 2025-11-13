@@ -19,6 +19,8 @@ export type {
   EmailSSOResponse,
   EmailSSOVerifyRequest,
   EmailSSOVerifyResponse,
+  EmailVerificationSendResponse,
+  EmailVerificationStatusResponse,
 } from './auth';
 
 // Matching types

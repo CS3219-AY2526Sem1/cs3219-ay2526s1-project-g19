@@ -1,17 +1,20 @@
 import { useAuth } from "../contexts/AuthContext";
-import { LucideLockKeyhole, Verified, LogOut } from "lucide-react";
+import { LucideLockKeyhole, Verified, LogOut, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useNotification } from "../contexts/NotificationContext";
 import { useState } from "react";
 import PasswordResetForm from "../components/profile/PasswordResetForm";
 import SessionHistory from "../components/profile/SessionHistory";
+import { userService } from "../api/services/userService";
 
 const ProfilePage = () => {
-    const { user } = useAuth();
-    const { logout } = useAuth();
+    const { user, logout } = useAuth();
     const { showSuccess, showError } = useNotification();
     const navigate = useNavigate();
     const [isPasswordFormOpen, setIsPasswordFormOpen] = useState(false);
+    const [isSendingVerification, setIsSendingVerification] = useState(false);
+
+    const isVerified = Boolean(user?.is_verified);
 
     const handleLogout = async () => {
         const result = await logout();
@@ -44,6 +47,33 @@ const ProfilePage = () => {
         // Always redirect to login page after logout attempt
         navigate('/login');
     }
+
+    const handleSendVerificationEmail = async () => {
+        if (!user || user.is_verified || isSendingVerification) {
+            return;
+        }
+
+        setIsSendingVerification(true);
+        try {
+            const response = await userService.sendVerificationEmail();
+            const detail = response.data?.detail || 'Verification email sent successfully.';
+            showSuccess('Email Sent', detail);
+        } catch (error) {
+            console.error('Failed to send verification email:', error);
+            const detail = error?.response?.data?.detail || 'Failed to send verification email. Please try again.';
+            showError('Verification Error', detail);
+        } finally {
+            setIsSendingVerification(false);
+        }
+    };
+
+    if (!user) {
+        return (
+            <div className="container mx-auto p-10 page-transition">
+                <p className="text-gray-500">Loading profile...</p>
+            </div>
+        );
+    }
     
     return (
         <div className="container mx-auto p-10 page-transition">
@@ -51,11 +81,23 @@ const ProfilePage = () => {
                 <div>
                     <h1 className="text-4xl font-bold mb-2">{user.display_name}</h1>
                     <h4 className="text-gray-400">Email: {user.email}</h4>
+                    <div className={`inline-flex items-center gap-2 text-sm font-semibold px-3 py-1 rounded-full mt-3 ${isVerified ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                        <Verified className={`h-4 w-4 ${isVerified ? '' : 'text-yellow-600'}`} />
+                        {isVerified ? 'Email verified' : 'Email not verified'}
+                    </div>
                 </div>
                 <div className="flex gap-4">
-                    <button className="bg-green-600 text-white hover:bg-green-700 font-semibold py-2 px-4 rounded whitespace-nowrap">
-                        <Verified className="inline-block mr-2" />
-                        Verify Account
+                    <button 
+                        onClick={handleSendVerificationEmail}
+                        disabled={isVerified || isSendingVerification}
+                        className={`bg-green-600 text-white font-semibold py-2 px-4 rounded whitespace-nowrap flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed ${!isVerified ? 'hover:bg-green-700' : ''}`}
+                    >
+                        {isSendingVerification ? (
+                            <Loader2 className="inline-block mr-2 animate-spin" />
+                        ) : (
+                            <Verified className="inline-block mr-2" />
+                        )}
+                        {isVerified ? 'Email Verified' : isSendingVerification ? 'Sending...' : 'Send Verification Email'}
                     </button>
                     <button 
                         onClick={() => setIsPasswordFormOpen(true)}
