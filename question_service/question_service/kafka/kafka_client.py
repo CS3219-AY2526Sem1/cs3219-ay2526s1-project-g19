@@ -38,7 +38,10 @@ class KafkaClient:
                 msg = self.consumer.poll(1.0)
                 poll_count += 1
                 if msg is None:
-                    logger.debug("Kafka poll #%d returned no message", poll_count)
+                    # logger.debug("Kafka poll #%d returned no message", poll_count)
+                    assignment = self.consumer.assignment()
+                    if assignment:
+                        logger.info("Kafka consumer assigned to partitions: %s", assignment)
                     continue
                 logger.debug(
                     "Kafka poll #%d got message topic=%s partition=%s offset=%s key_size=%s value_size=%s",
