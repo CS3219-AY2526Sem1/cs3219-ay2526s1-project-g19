@@ -20,6 +20,18 @@ class KafkaClient:
         logger.info(f"Kafka consumer started. Subscribed to {topic}")
         logger.debug("Kafka consumer config: %s", consumer_config)
 
+        logger.debug("Waiting for partition assignment...")
+        import time
+        for i in range(20):
+            assignment = self.consumer.assignment()
+            if assignment:
+                logger.info("Kafka consumer assigned to partitions: %s", assignment)
+                break
+            self.consumer.poll(0.1)
+            time.sleep(0.5)
+        else:
+            logger.warning("No partition assignment after waiting period")
+
         try:
             poll_count = 0
             while True:
