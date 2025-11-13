@@ -31,12 +31,19 @@ import shlex
 secret = os.environ.get("SECRET_STRING", "").strip()
 valid_key = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
+def normalize_value(value):
+    value = str(value).strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+        value = value[1:-1]
+    return value
+
 def emit_from_pairs(pairs):
     for key, value in pairs:
         key = key.strip()
         if not valid_key.match(key):
             continue
-        print(f"export {key}={shlex.quote(str(value).strip())}")
+        cleaned_value = normalize_value(value)
+        print(f"export {key}={shlex.quote(cleaned_value)}")
 
 if not secret:
     raise SystemExit
