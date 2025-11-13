@@ -108,10 +108,12 @@
                 is your email address for user <strong>{{ confirmation.email_address.user.first_name }}</strong>.
             </p>
 
-            <form method="post" action="{{ request.get_full_path }}">
+            {% with prefix=request.META.HTTP_X_FORWARDED_PREFIX|default:"" %}
+            <form method="post" action="{{ prefix }}{% url 'account_confirm_email' confirmation.key %}">
                 {% csrf_token %}
                 <button class="confirm-btn" type="submit">Confirm Email Address</button>
             </form>
+            {% endwith %}
 
             <p class="info">
                 After confirming, you'll be redirected to the PeerPrep application.
