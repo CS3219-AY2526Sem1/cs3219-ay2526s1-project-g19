@@ -102,8 +102,8 @@ jobs:
           echo "SSM Command ID: $COMMAND_ID"
           echo "Waiting for deployment to complete..."
 
-          # Wait for command to complete (max ~5 minutes)
-          timeout 300 aws ssm wait command-executed \
+          # Wait for command to complete (may take a while on cold builds)
+          aws ssm wait command-executed \
             --command-id "$COMMAND_ID" \
             --instance-id "$INSTANCE_ID" || true
 
