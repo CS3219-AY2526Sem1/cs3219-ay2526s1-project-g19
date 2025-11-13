@@ -53,6 +53,10 @@ const ProfilePage = () => {
                     <h4 className="text-gray-400">Email: {user.email}</h4>
                 </div>
                 <div className="flex gap-4">
+                    <button className="bg-green-600 text-white hover:bg-green-700 font-semibold py-2 px-4 rounded whitespace-nowrap">
+                        <Verified className="inline-block mr-2" />
+                        Verify Account
+                    </button>
                     <button 
                         onClick={() => setIsPasswordFormOpen(true)}
                         className="bg-primary text-white hover:bg-primary-dark font-semibold py-2 px-4 rounded whitespace-nowrap"
@@ -66,10 +70,6 @@ const ProfilePage = () => {
                         <LogOut className="inline-block mr-2" />
                         Logout
                     </button>
-                    {/* <button className="bg-green-500 text-white hover:bg-green-600 font-semibold py-2 px-4 rounded whitespace-nowrap">
-                        <Verified className="inline-block mr-2" />
-                        Verify Account
-                    </button> */}
                 </div>
             </div>
 
