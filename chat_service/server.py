@@ -15,12 +15,27 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # --- Config / constants ---
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
+
+def resolve_redis_url() -> str:
+    """Build a Redis URL from provided environment variables."""
+    explicit_url = os.getenv("CHAT_REDIS_URL") or os.getenv("REDIS_URL")
+    if explicit_url:
+        return explicit_url
+
+    host = os.getenv("CHAT_REDIS_HOST", os.getenv("REDIS_HOST", "localhost"))
+    port = os.getenv("CHAT_REDIS_PORT", os.getenv("REDIS_PORT",  "6379"))
+    db = os.getenv("CHAT_REDIS_DB") or os.getenv("REDIS_DB")
+
+    db_suffix = f"/{db}" if db not in (None, "", "/") else ""
+    return f"redis://{host}:{port}{db_suffix}"
+
+
+REDIS_URL = resolve_redis_url()
 EXPIRY_TIME = 3600
-SERVICE_PREFIX = os.getenv("SERVICE_PREFIX", "/chat-service-api")
-if SERVICE_PREFIX and not SERVICE_PREFIX.startswith("/"):
-    SERVICE_PREFIX = "/" + SERVICE_PREFIX
-SERVICE_PREFIX = SERVICE_PREFIX.rstrip("/")
+raw_service_prefix = os.getenv("CHAT_SERVICE_PREFIX") or os.getenv("SERVICE_PREFIX") or "/chat-service-api"
+if raw_service_prefix and not raw_service_prefix.startswith("/"):
+    raw_service_prefix = "/" + raw_service_prefix
+SERVICE_PREFIX = raw_service_prefix.rstrip("/")
 
 # --- Redis connection (for chat history) ---
 redis_client = None

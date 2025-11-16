@@ -17,6 +17,29 @@ resource "aws_ecs_task_definition" "main" {
   execution_role_arn       = var.task_execution_role_arn
   task_role_arn            = var.task_role_arn
 
+  # EFS Volume Configuration (optional)
+  dynamic "volume" {
+    for_each = var.efs_volume_configuration != null ? [var.efs_volume_configuration] : []
+    content {
+      name = volume.value.name
+
+      efs_volume_configuration {
+        file_system_id          = volume.value.file_system_id
+        root_directory          = volume.value.root_directory
+        transit_encryption      = volume.value.transit_encryption
+        transit_encryption_port = volume.value.transit_encryption_port
+
+        dynamic "authorization_config" {
+          for_each = volume.value.access_point_id != null ? [1] : []
+          content {
+            access_point_id = volume.value.access_point_id
+            iam             = volume.value.iam
+          }
+        }
+      }
+    }
+  }
+
   container_definitions = jsonencode([
     {
       name      = var.service_name
@@ -29,6 +52,15 @@ resource "aws_ecs_task_definition" "main" {
           protocol      = "tcp"
         }
       ]
+
+      # Mount points for EFS volumes
+      mountPoints = var.efs_volume_configuration != null ? [
+        {
+          sourceVolume  = var.efs_volume_configuration.name
+          containerPath = var.efs_volume_configuration.container_path
+          readOnly      = false
+        }
+      ] : []
 
       environment = [
         for key, value in var.environment_variables : {
@@ -48,13 +80,21 @@ resource "aws_ecs_task_definition" "main" {
         }
       }
 
-      healthCheck = {
-        command     = ["CMD-SHELL", "python - <<'PY'\nimport sys,urllib.request\ntry:\n  r=urllib.request.urlopen('http://127.0.0.1:${var.container_port}/health', timeout=2)\n  sys.exit(0 if r.getcode()==200 else 1)\nexcept Exception:\n  sys.exit(1)\nPY"]
-        interval    = 30
-        timeout     = 5
-        retries     = 3
-        startPeriod = 60
+      healthCheck = length(var.container_health_check_command) > 0 ? {
+        command     = var.container_health_check_command
+        interval    = var.container_health_check_interval
+        timeout     = var.container_health_check_timeout
+        retries     = var.container_health_check_retries
+        startPeriod = var.container_health_check_start_period
+        } : {
+        command     = ["CMD-SHELL", "python - <<'PY'\nimport sys,urllib.request\ntry:\n  r=urllib.request.urlopen('http://127.0.0.1:${var.container_port}${var.container_health_check_path}', timeout=2)\n  sys.exit(0 if r.getcode()==200 else 1)\nexcept Exception:\n  sys.exit(1)\nPY"]
+        interval    = var.container_health_check_interval
+        timeout     = var.container_health_check_timeout
+        retries     = var.container_health_check_retries
+        startPeriod = var.container_health_check_start_period
       }
+
+      stopTimeout = var.stop_timeout
     }
   ])
 
@@ -75,7 +115,8 @@ resource "aws_ecs_service" "main" {
   cluster         = var.cluster_id
   task_definition = aws_ecs_task_definition.main.arn
   desired_count   = var.desired_count
-  
+  enable_execute_command = var.enable_execute_command
+
   # Only use launch_type when not using capacity providers
   launch_type = var.use_capacity_providers ? null : "FARGATE"
 
@@ -137,7 +178,7 @@ resource "aws_ecs_service" "main" {
   capacity_provider_strategy {
     capacity_provider = "FARGATE"
     weight            = 1
-    base              = 1  # At least 1 task on On-Demand
+    base              = 1 # At least 1 task on On-Demand
   }
 
   # Deployment circuit breaker

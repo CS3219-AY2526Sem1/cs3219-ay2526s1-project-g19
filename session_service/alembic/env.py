@@ -1,4 +1,6 @@
 import asyncio
+import json
+import logging
 from logging.config import fileConfig
 
 from sqlalchemy import pool
@@ -23,7 +25,7 @@ target_metadata = SQLModel.metadata
 # ------------------------
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode (no DB connection)."""
-    url = settings.pg_url.replace("+asyncpg", "+psycopg2")  # offline needs sync driver
+    url = settings.pg_sync_url  # offline needs sync driver
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -39,7 +41,11 @@ def run_migrations_offline() -> None:
 # ------------------------
 async def run_migrations_online() -> None:
     """Run migrations in 'online' mode with AsyncEngine."""
-    connectable = create_async_engine(settings.pg_url, poolclass=pool.NullPool)
+    connectable = create_async_engine(
+        settings.pg_url,
+        connect_args={"ssl": settings.async_ssl_context},
+        poolclass=pool.NullPool
+    )
 
     async with connectable.begin() as connection:
         await connection.run_sync(do_run_migrations)

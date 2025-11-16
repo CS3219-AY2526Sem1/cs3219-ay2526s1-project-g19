@@ -30,4 +30,15 @@ for VAR in $(env | grep '^TOPIC_' | cut -d= -f1); do
     fi
 done
 
+# Create _schemas topic with compact cleanup policy for schema-registry
+echo "Creating _schemas topic with compact cleanup policy for schema-registry..."
+kafka-topics \
+    --bootstrap-server "$BOOTSTRAP" \
+    --create \
+    --if-not-exists \
+    --topic "_schemas" \
+    --partitions 1 \
+    --replication-factor "$REPLICATION" \
+    --config cleanup.policy=compact
+
 echo "All topics created successfully!"

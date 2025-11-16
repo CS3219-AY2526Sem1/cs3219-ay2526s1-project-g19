@@ -65,6 +65,42 @@ variable "container_memory" {
   default     = 512
 }
 
+variable "container_health_check_path" {
+  description = "HTTP path the container health check should query (must include leading /)"
+  type        = string
+  default     = "/health"
+}
+
+variable "container_health_check_command" {
+  description = "Override for the container health check command (leave empty to use default HTTP check)"
+  type        = list(string)
+  default     = []
+}
+
+variable "container_health_check_interval" {
+  description = "Interval between health checks"
+  type        = number
+  default     = 30
+}
+
+variable "container_health_check_timeout" {
+  description = "Timeout for health checks"
+  type        = number
+  default     = 5
+}
+
+variable "container_health_check_retries" {
+  description = "Consecutive failures before marking unhealthy"
+  type        = number
+  default     = 3
+}
+
+variable "container_health_check_start_period" {
+  description = "Grace period before starting health checks"
+  type        = number
+  default     = 60
+}
+
 # Environment Variables
 variable "environment_variables" {
   description = "Map of environment variables for the container"
@@ -162,6 +198,34 @@ variable "tags" {
 
 variable "use_capacity_providers" {
   description = "Whether to use ECS capacity providers instead of launch_type"
+  type        = bool
+  default     = true
+}
+
+# EFS Volume Configuration
+variable "efs_volume_configuration" {
+  description = "EFS volume configuration for persistent storage"
+  type = object({
+    name                    = string
+    file_system_id          = string
+    root_directory          = string
+    container_path          = string
+    transit_encryption      = string
+    transit_encryption_port = number
+    access_point_id         = string
+    iam                     = string
+  })
+  default = null
+}
+
+variable "stop_timeout" {
+  description = "Time to wait for container to stop gracefully before force killing (seconds)"
+  type        = number
+  default     = 30
+}
+
+variable "enable_execute_command" {
+  description = "Enable ECS Exec for debugging"
   type        = bool
   default     = true
 }

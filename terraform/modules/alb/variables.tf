@@ -30,7 +30,7 @@ variable "alb_security_group_id" {
 variable "enable_deletion_protection" {
   description = "Enable deletion protection for ALB"
   type        = bool
-  default     = false  # Set to true in production
+  default     = false # Set to true in production
 }
 
 variable "access_logs_bucket" {

@@ -91,7 +91,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'user_service.wsgi.application'
 
 # Database configuration
-DATABASE_URL = config('DATABASE_URL', default=None)
+DATABASE_URL = config('USER_DATABASE_URL', default=None) or config('DATABASE_URL', default=None)
 
 if DATABASE_URL:
     # Parse DATABASE_URL for production/docker
@@ -101,14 +101,35 @@ if DATABASE_URL:
     }
 else:
     # Docker/Development database configuration
+    db_name = (
+        config('USER_DB_NAME', default=None)
+        or config('DB_NAME', default='user_db')
+    )
+    db_user = (
+        config('USER_DB_USER', default=None)
+        or config('DB_USER', default='postgres')
+    )
+    db_password = (
+        config('USER_DB_PASSWORD', default=None)
+        or config('DB_PASSWORD', default='postgres')
+    )
+    db_host = (
+        config('USER_DB_HOST', default=None)
+        or config('DB_HOST', default='user_db')
+    )
+    db_port = (
+        config('USER_DB_PORT', default=None)
+        or config('DB_PORT', default='5432')
+    )
+
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': config('DB_NAME', default='user_db'),
-            'USER': config('DB_USER', default='postgres'),
-            'PASSWORD': config('DB_PASSWORD', default='postgres'),
-            'HOST': config('DB_HOST', default='user_db'),
-            'PORT': config('DB_PORT', default='5432'),
+            'NAME': db_name,
+            'USER': db_user,
+            'PASSWORD': db_password,
+            'HOST': db_host,
+            'PORT': db_port,
         }
     }
 

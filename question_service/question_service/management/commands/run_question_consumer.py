@@ -1,4 +1,5 @@
 import logging
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from question_service.kafka.consumers.match_found_consumer import match_found_consumer
 
@@ -8,4 +9,16 @@ class Command(BaseCommand):
     help = "Runs Kafka consumer for question service"
 
     def handle(self, *args, **options):
-        match_found_consumer.listen()
+        logger.info(
+            "Question consumer starting up... DEBUG=%s LOG_LEVEL=%s effective_level=%s",
+            settings.DEBUG,
+            getattr(settings, "LOG_LEVEL", "INFO"),
+            logging.getLevelName(logger.getEffectiveLevel())
+        )
+        try:
+            match_found_consumer.listen()
+        except Exception:
+            logger.exception("Question consumer crashed unexpectedly.")
+            raise
+        finally:
+            logger.info("Question consumer shutting down.")

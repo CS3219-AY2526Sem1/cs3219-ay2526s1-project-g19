@@ -37,7 +37,8 @@ SERVICE_NAMES=(
     "user-service"
     "question-service"
     "matching-service"
-    "history-service"
+    "session-service"
+    "execution-service"
     "collaboration-service"
     "chat-service"
     "frontend"
@@ -47,7 +48,8 @@ SERVICE_DIRS=(
     "user_service"
     "question_service"
     "matching_service"
-    "history_service"
+    "session_service"
+    "execution_service"
     "collaboration_service"
     "chat_service"
     "frontend"
@@ -67,6 +69,13 @@ echo ""
 # -----------------------------------------------------------------------------
 echo -e "${BLUE}[2/3] Building Docker Images...${NC}"
 cd "$(dirname "$0")/.."
+
+# Support optional --no-cache flag
+NO_CACHE_BUILD=0
+if [ "${1:-}" = "--no-cache" ]; then
+    NO_CACHE_BUILD=1
+    echo -e "${YELLOW}⚠ Running docker builds with --no-cache${NC}"
+fi
 
 # Loop through services
 for i in "${!SERVICE_NAMES[@]}"; do
@@ -106,9 +115,11 @@ for i in "${!SERVICE_NAMES[@]}"; do
         )
     fi
 
-    docker build \
-        "${build_args[@]}" \
-        "$SERVICE_DIR"
+    if [ "$NO_CACHE_BUILD" -eq 1 ]; then
+        build_args+=(--no-cache)
+    fi
+
+    docker build "${build_args[@]}" "$SERVICE_DIR"
 
     echo -e "${GREEN}✓ Built $SERVICE_NAME${NC}"
 done

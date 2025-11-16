@@ -18,20 +18,85 @@ class KafkaClient:
     def consumer_listen(self, topic, handler):
         self.consumer.subscribe([topic])
         logger.info(f"Kafka consumer started. Subscribed to {topic}")
+        logger.debug("Kafka consumer config: %s", consumer_config)
+
+        logger.debug("Waiting for partition assignment...")
+        import time
+        for i in range(20):
+            assignment = self.consumer.assignment()
+            if assignment:
+                logger.info("Kafka consumer assigned to partitions: %s", assignment)
+                break
+            self.consumer.poll(0.1)
+            time.sleep(0.5)
+        else:
+            logger.warning("No partition assignment after waiting period")
 
         try:
+            poll_count = 0
             while True:
                 msg = self.consumer.poll(1.0)
+                poll_count += 1
+                if msg is None:
+                    logger.debug("Kafka poll #%d returned no message", poll_count)
+                    assignment = self.consumer.assignment()
+                    logger.info("Kafka consumer assigned to partitions: %s", assignment)
+                    continue
+                logger.debug(
+                    "Kafka poll #%d got message topic=%s partition=%s offset=%s key_size=%s value_size=%s",
+                    poll_count,
+                    msg.topic(),
+                    msg.partition(),
+                    msg.offset(),
+                    len(msg.key() or b""),
+                    len(msg.value() or b"")
+                )
                 if msg is None:
                     continue
                 if msg.error():
                     if msg.error().code() != KafkaError._PARTITION_EOF:
                         logger.error(f"Kafka error: {msg.error()}")
                     continue
-                handler(msg)
+                key_preview = None
+                try:
+                    key_preview = msg.key().decode() if msg.key() else None
+                except Exception:
+                    key_preview = "<binary>"
+                logger.info(
+                    "Kafka message received topic=%s partition=%s offset=%s key=%s",
+                    msg.topic(),
+                    msg.partition(),
+                    msg.offset(),
+                    key_preview,
+                )
+                try:
+                    logger.debug(
+                        "Invoking handler %s for topic=%s partition=%s offset=%s",
+                        getattr(handler, "__qualname__", repr(handler)),
+                        msg.topic(),
+                        msg.partition(),
+                        msg.offset()
+                    )
+                    handler(msg)
+                    logger.debug(
+                        "Handler %s completed for topic=%s partition=%s offset=%s",
+                        getattr(handler, "__qualname__", repr(handler)),
+                        msg.topic(),
+                        msg.partition(),
+                        msg.offset()
+                    )
+                except Exception:
+                    logger.exception(
+                        "Kafka message handler crashed for topic=%s partition=%s offset=%s",
+                        msg.topic(),
+                        msg.partition(),
+                        msg.offset(),
+                    )
+                    raise
         except KeyboardInterrupt:
             logger.info("Stopping consumer...")
         finally:
+            logger.info("Kafka consumer closing subscription...")
             self.consumer.close()
 
 

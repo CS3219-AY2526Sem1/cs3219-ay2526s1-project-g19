@@ -95,19 +95,19 @@ variable "db_backup_retention_period" {
 variable "db_deletion_protection" {
   description = "Enable deletion protection"
   type        = bool
-  default     = false  # Set to true in production
+  default     = false # Set to true in production
 }
 
 variable "db_skip_final_snapshot" {
   description = "Skip final snapshot when destroying (set to false in production)"
   type        = bool
-  default     = true  # Set to false in production to keep final snapshot
+  default     = true # Set to false in production to keep final snapshot
 }
 
 variable "db_engine_version" {
   description = "PostgreSQL engine version"
   type        = string
-  default     = "15.4"
+  default     = "15.14"
 }
 
 variable "db_name" {
@@ -169,7 +169,7 @@ variable "redis_snapshot_retention_limit" {
 variable "alb_enable_deletion_protection" {
   description = "Enable deletion protection for ALB"
   type        = bool
-  default     = false  # Set to true in production
+  default     = false # Set to true in production
 }
 
 variable "alb_access_logs_bucket" {
@@ -197,13 +197,16 @@ variable "service_names" {
   description = "List of microservice names"
   type        = list(string)
   default = [
+    "frontend",
     "user-service",
     "question-service",
     "matching-service",
-    "history-service",
+    "session-service",
+    "execution-service",
     "collaboration-service",
     "chat-service",
-    "frontend"
+    "kafka",
+    "schema-registry"
   ]
 }
 
@@ -340,21 +343,40 @@ variable "matching_service_desired_count" {
   default     = 2
 }
 
-# History Service
-variable "history_service_cpu" {
-  description = "CPU units for history service"
+# Session Service (replaces History Service)
+variable "session_service_cpu" {
+  description = "CPU units for session service"
   type        = number
   default     = 256
 }
 
-variable "history_service_memory" {
-  description = "Memory for history service in MB"
+variable "session_service_memory" {
+  description = "Memory for session service in MB"
   type        = number
   default     = 512
 }
 
-variable "history_service_desired_count" {
-  description = "Desired number of history service tasks"
+variable "session_service_desired_count" {
+  description = "Desired number of session service tasks"
+  type        = number
+  default     = 2
+}
+
+# Execution Service
+variable "execution_service_cpu" {
+  description = "CPU units for execution service"
+  type        = number
+  default     = 256
+}
+
+variable "execution_service_memory" {
+  description = "Memory for execution service in MB"
+  type        = number
+  default     = 512
+}
+
+variable "execution_service_desired_count" {
+  description = "Desired number of execution service tasks"
   type        = number
   default     = 2
 }
@@ -427,4 +449,91 @@ variable "ecs_log_retention_days" {
   description = "CloudWatch log retention period in days"
   type        = number
   default     = 7
+}
+
+# =============================================================================
+# Kafka Infrastructure Variables
+# =============================================================================
+
+# Kafka Broker
+variable "kafka_cpu" {
+  description = "CPU units for Kafka broker"
+  type        = number
+  default     = 1024 # Kafka needs more resources
+}
+
+variable "kafka_memory" {
+  description = "Memory for Kafka broker in MB"
+  type        = number
+  default     = 2048
+}
+
+# Schema Registry
+variable "schema_registry_cpu" {
+  description = "CPU units for Schema Registry"
+  type        = number
+  default     = 256
+}
+
+variable "schema_registry_memory" {
+  description = "Memory for Schema Registry in MB"
+  type        = number
+  default     = 512
+}
+
+# Kafka Topics
+variable "kafka_topic_match_found" {
+  description = "Kafka topic for match found events"
+  type        = string
+  default     = "match.found"
+}
+
+variable "kafka_topic_question_chosen" {
+  description = "Kafka topic for question chosen events"
+  type        = string
+  default     = "question.chosen"
+}
+
+variable "kafka_topic_session_created" {
+  description = "Kafka topic for session created events"
+  type        = string
+  default     = "session.created"
+}
+
+variable "kafka_topic_session_end" {
+  description = "Kafka topic for session end events"
+  type        = string
+  default     = "session.end"
+}
+
+# Service path prefixes used behind the ALB and by each container
+variable "service_prefix_overrides" {
+  description = "Map of service names to the HTTP prefix mounted on the ALB (e.g. /matching-service-api)"
+  type        = map(string)
+  default = {
+    "user-service"          = "/user-service-api"
+    "question-service"      = "/question-service-api"
+    "matching-service"      = "/matching-service-api"
+    "session-service"       = "/session-service-api"
+    "execution-service"     = "/execution-service-api"
+    "collaboration-service" = "/collaboration-service-api"
+    "chat-service"          = "/chat-service-api"
+  }
+}
+
+# =============================================================================
+# Judge0 Configuration Variables
+# =============================================================================
+
+variable "judge0_url" {
+  description = "Judge0 API URL for code execution"
+  type        = string
+  default     = "https://ce.judge0.com"
+}
+
+variable "judge0_api_key" {
+  description = "Judge0 API key for code execution"
+  type        = string
+  sensitive   = true
+  default     = "" # Should be provided via tfvars or secrets
 }

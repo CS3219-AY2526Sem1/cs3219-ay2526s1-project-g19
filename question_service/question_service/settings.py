@@ -14,7 +14,7 @@ USE_SQLITE = os.environ.get("DJANGO_USE_SQLITE", "1") == "1"
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-df)+b=!9x-hs(5ot8zvsdr!tg3d$vs3!!2tee8%ltior+_ha-h')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
+DEBUG = True
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,0.0.0.0', cast=lambda v: [s.strip() for s in v.split(',')])
 
@@ -91,21 +91,42 @@ if USE_SQLITE:
         }
     }
 else:
-    DATABASE_URL = config('DATABASE_URL', default=None)
+    DATABASE_URL = config('QUESTION_DATABASE_URL', default=None) or config('DATABASE_URL', default=None)
     if DATABASE_URL:
         import dj_database_url
         DATABASES = {
             'default': dj_database_url.parse(DATABASE_URL)
         }
     else:
+        db_name = (
+            config('QUESTION_DB_NAME', default=None)
+            or config('DB_NAME', default='question_db')
+        )
+        db_user = (
+            config('QUESTION_DB_USER', default=None)
+            or config('DB_USER', default='postgres')
+        )
+        db_password = (
+            config('QUESTION_DB_PASSWORD', default=None)
+            or config('DB_PASSWORD', default='postgres')
+        )
+        db_host = (
+            config('QUESTION_DB_HOST', default=None)
+            or config('DB_HOST', default='question_db')
+        )
+        db_port = (
+            config('QUESTION_DB_PORT', default=None)
+            or config('DB_PORT', default='5432')
+        )
+
         DATABASES = {
             'default': {
                 'ENGINE': 'django.db.backends.postgresql',
-                'NAME': config('DB_NAME', default='question_db'),
-                'USER': config('DB_USER', default='postgres'),
-                'PASSWORD': config('DB_PASSWORD', default='postgres'),
-                'HOST': config('DB_HOST', default='question_db'),
-                'PORT': config('DB_PORT', default='5432'),
+                'NAME': db_name,
+                'USER': db_user,
+                'PASSWORD': db_password,
+                'HOST': db_host,
+                'PORT': db_port,
             }
         }
 
@@ -127,12 +148,9 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # REST Framework configuration
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
-    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [],  # Disable authentication
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',
     ],
     "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
@@ -142,12 +160,6 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
-
-# In local development allow anonymous access to make testing easier
-if DEBUG:
-    REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] = [
-        'rest_framework.permissions.AllowAny'
-    ]
 
 # Make trailing slashes optional by auto-appending
 APPEND_SLASH = True
@@ -189,22 +201,41 @@ SPECTACULAR_SETTINGS = {
 }
 
 # Logging configuration
+LOG_LEVEL = "DEBUG" if DEBUG else "INFO"
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '%(asctime)s [%(levelname)s] %(name)s - %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
         },
     },
     'root': {
         'handlers': ['console'],
-        'level': 'INFO',
+        'level': LOG_LEVEL,
     },
     'loggers': {
         'django': {
             'handlers': ['console'],
-            'level': 'INFO',
+            'level': LOG_LEVEL,
+            'propagate': False,
+        },
+        'question_service.kafka': {
+            'handlers': ['console'],
+            'level': LOG_LEVEL,
+            'propagate': False,
+        },
+        'question_service.kafka.consumers': {
+            'handlers': ['console'],
+            'level': LOG_LEVEL,
             'propagate': False,
         },
     },
