@@ -127,12 +127,9 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # REST Framework configuration
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
-    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [],  # Disable authentication
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',
     ],
     "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
@@ -142,12 +139,6 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
-
-# In local development allow anonymous access to make testing easier
-if DEBUG:
-    REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] = [
-        'rest_framework.permissions.AllowAny'
-    ]
 
 # Make trailing slashes optional by auto-appending
 APPEND_SLASH = True

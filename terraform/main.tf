@@ -15,14 +15,8 @@ terraform {
     }
   }
 
-  # Optional: Uncomment to use S3 backend for state management
-  # backend "s3" {
-  #   bucket         = "peerprep-terraform-state"
-  #   key            = "ecs/terraform.tfstate"
-  #   region         = "ap-southeast-1"
-  #   encrypt        = true
-  #   dynamodb_table = "peerprep-terraform-locks"
-  # }
+  # Remote backend configuration is supplied via -backend-config flags/env vars.
+  backend "s3" {}
 }
 
 # =============================================================================
@@ -39,6 +33,12 @@ provider "aws" {
       Owner       = "PeerPrep-Team"
     }
   }
+}
+
+# Provider alias without default tags for resources with IAM tagging restrictions
+provider "aws" {
+  alias  = "no_default_tags"
+  region = var.aws_region
 }
 
 # =============================================================================
@@ -118,20 +118,20 @@ resource "aws_db_subnet_group" "main" {
 module "rds_user" {
   source = "./modules/rds"
 
-  name_prefix         = "${var.project_name}-${var.environment}-user"
-  vpc_id              = module.vpc.vpc_id
-  database_subnet_ids = module.vpc.private_subnet_ids
+  name_prefix          = "${var.project_name}-${var.environment}-user"
+  vpc_id               = module.vpc.vpc_id
+  database_subnet_ids  = module.vpc.private_subnet_ids
   db_subnet_group_name = aws_db_subnet_group.main.name
-  security_group_ids  = [module.security_groups.user_db_security_group_id]
+  security_group_ids   = [module.security_groups.user_db_security_group_id]
 
   # Database configuration
-  engine_version      = var.db_engine_version
-  db_instance_class   = var.db_instance_class
-  allocated_storage   = var.db_allocated_storage
+  engine_version        = var.db_engine_version
+  db_instance_class     = var.db_instance_class
+  allocated_storage     = var.db_allocated_storage
   max_allocated_storage = var.db_max_allocated_storage
-  database_names      = ["user_db"]
-  master_username     = var.db_username
-  master_password     = var.db_password
+  database_names        = ["user_db"]
+  master_username       = var.db_username
+  master_password       = var.db_password
 
   # High availability
   multi_az = var.db_multi_az
@@ -219,22 +219,22 @@ module "rds_matching" {
   tags = var.tags
 }
 
-# History Database
-module "rds_history" {
+# Session Database (replaces History Database)
+module "rds_session" {
   source = "./modules/rds"
 
-  name_prefix          = "${var.project_name}-${var.environment}-history"
+  name_prefix          = "${var.project_name}-${var.environment}-session"
   vpc_id               = module.vpc.vpc_id
   database_subnet_ids  = module.vpc.private_subnet_ids
   db_subnet_group_name = aws_db_subnet_group.main.name
-  security_group_ids   = [module.security_groups.history_db_security_group_id]
+  security_group_ids   = [module.security_groups.session_db_security_group_id]
 
   # Database configuration
   engine_version        = var.db_engine_version
   db_instance_class     = var.db_instance_class
   allocated_storage     = var.db_allocated_storage
   max_allocated_storage = var.db_max_allocated_storage
-  database_names        = ["history_db"]
+  database_names        = ["session_db"]
   master_username       = var.db_username
   master_password       = var.db_password
 
@@ -274,16 +274,16 @@ resource "aws_elasticache_subnet_group" "main" {
 module "elasticache_matching" {
   source = "./modules/elasticache"
 
-  name_prefix            = "${var.project_name}-${var.environment}-matching"
-  vpc_id                 = module.vpc.vpc_id
-  cache_subnet_ids       = module.vpc.private_subnet_ids
+  name_prefix             = "${var.project_name}-${var.environment}-matching"
+  vpc_id                  = module.vpc.vpc_id
+  cache_subnet_ids        = module.vpc.private_subnet_ids
   cache_subnet_group_name = aws_elasticache_subnet_group.main.name
-  security_group_ids     = [module.security_groups.matching_redis_security_group_id]
+  security_group_ids      = [module.security_groups.matching_redis_security_group_id]
 
   # Redis configuration
-  engine_version   = var.redis_engine_version
-  node_type        = var.redis_node_type
-  num_cache_nodes  = var.redis_num_cache_nodes
+  engine_version  = var.redis_engine_version
+  node_type       = var.redis_node_type
+  num_cache_nodes = var.redis_num_cache_nodes
 
   # Maintenance and backups
   maintenance_window       = "sun:05:00-sun:06:00"
@@ -297,16 +297,16 @@ module "elasticache_matching" {
 module "elasticache_collaboration" {
   source = "./modules/elasticache"
 
-  name_prefix            = "${var.project_name}-${var.environment}-collab"
-  vpc_id                 = module.vpc.vpc_id
-  cache_subnet_ids       = module.vpc.private_subnet_ids
+  name_prefix             = "${var.project_name}-${var.environment}-collab"
+  vpc_id                  = module.vpc.vpc_id
+  cache_subnet_ids        = module.vpc.private_subnet_ids
   cache_subnet_group_name = aws_elasticache_subnet_group.main.name
-  security_group_ids     = [module.security_groups.collaboration_redis_security_group_id]
+  security_group_ids      = [module.security_groups.collaboration_redis_security_group_id]
 
   # Redis configuration
-  engine_version   = var.redis_engine_version
-  node_type        = var.redis_node_type
-  num_cache_nodes  = var.redis_num_cache_nodes
+  engine_version  = var.redis_engine_version
+  node_type       = var.redis_node_type
+  num_cache_nodes = var.redis_num_cache_nodes
 
   # Maintenance and backups
   maintenance_window       = "sun:05:00-sun:06:00"
@@ -320,16 +320,16 @@ module "elasticache_collaboration" {
 module "elasticache_chat" {
   source = "./modules/elasticache"
 
-  name_prefix            = "${var.project_name}-${var.environment}-chat"
-  vpc_id                 = module.vpc.vpc_id
-  cache_subnet_ids       = module.vpc.private_subnet_ids
+  name_prefix             = "${var.project_name}-${var.environment}-chat"
+  vpc_id                  = module.vpc.vpc_id
+  cache_subnet_ids        = module.vpc.private_subnet_ids
   cache_subnet_group_name = aws_elasticache_subnet_group.main.name
-  security_group_ids     = [module.security_groups.chat_redis_security_group_id]
+  security_group_ids      = [module.security_groups.chat_redis_security_group_id]
 
   # Redis configuration
-  engine_version   = var.redis_engine_version
-  node_type        = var.redis_node_type
-  num_cache_nodes  = var.redis_num_cache_nodes
+  engine_version  = var.redis_engine_version
+  node_type       = var.redis_node_type
+  num_cache_nodes = var.redis_num_cache_nodes
 
   # Maintenance and backups
   maintenance_window       = "sun:05:00-sun:06:00"
@@ -406,14 +406,17 @@ locals {
     "user-service"          = {}
     "question-service"      = {}
     "matching-service"      = {}
-    "history-service"       = {}
+    "session-service"       = {} # Replaces history-service
+    "execution-service"     = {}
     "collaboration-service" = {}
     "chat-service"          = {}
+    "kafka"                 = {}
+    "schema-registry"       = {}
   }
 }
 
 resource "aws_ecr_repository" "services" {
-  for_each = local.services
+  for_each     = local.services
   force_delete = true
 
   name                 = "${var.project_name}-${var.environment}-${each.key}"
@@ -448,9 +451,9 @@ resource "aws_ecr_lifecycle_policy" "services" {
         rulePriority = 1
         description  = "Keep last 5 images"
         selection = {
-          tagStatus     = "any"
-          countType     = "imageCountMoreThan"
-          countNumber   = 5
+          tagStatus   = "any"
+          countType   = "imageCountMoreThan"
+          countNumber = 5
         }
         action = {
           type = "expire"
@@ -490,27 +493,14 @@ module "ecs_service_user" {
   container_memory = var.user_service_memory
   desired_count    = var.user_service_desired_count
 
-  # Environment Variables
-  environment_variables = {
-    DEBUG        = "false"
-    SECRET_KEY   = var.secret_key
-    ALLOWED_HOSTS = "*"  # Allow all hosts since service is behind ALB in private VPC
-
-    # Database Connection
-    DATABASE_URL = "postgresql://${var.db_username}:${var.db_password}@${module.rds_user.db_endpoint}/user_db"
-    DB_HOST      = module.rds_user.db_host
-    DB_PORT      = "5432"
-    DB_NAME      = "user_db"
-    DB_USER      = var.db_username
-    DB_PASSWORD  = var.db_password
-
-    # Service-to-Service URLs
-    QUESTION_SERVICE_URL      = "http://question-service.${module.service_discovery.namespace_name}:8000"
-    MATCHING_SERVICE_URL      = "http://matching-service.${module.service_discovery.namespace_name}:8000"
-    HISTORY_SERVICE_URL       = "http://history-service.${module.service_discovery.namespace_name}:8000"
-    COLLABORATION_SERVICE_URL = "http://collaboration-service.${module.service_discovery.namespace_name}:8000"
-    CHAT_SERVICE_URL          = "http://chat-service.${module.service_discovery.namespace_name}:8000"
-  }
+  # Environment Variables - Fetched from AWS Secrets Manager
+  environment_variables = merge(
+    {
+      AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
+      AWS_REGION      = var.aws_region
+    },
+    try({ SERVICE_PREFIX_OVERRIDE = var.service_prefix_overrides["user-service"] }, {})
+  )
 
   # IAM Roles
   task_execution_role_arn = module.ecs_cluster.task_execution_role_arn
@@ -525,10 +515,12 @@ module "ecs_service_user" {
   target_group_arn     = module.alb.target_group_arns["user-service"]
 
   # Service Discovery
-  enable_service_discovery       = true
-  service_discovery_service_arn  = module.service_discovery.service_discovery_services["user-service"]
+  enable_service_discovery      = true
+  service_discovery_service_arn = module.service_discovery.service_discovery_services["user-service"]
 
   tags = var.tags
+
+  depends_on = [module.alb]
 }
 
 # -----------------------------------------------------------------------------
@@ -557,26 +549,14 @@ module "ecs_service_question" {
   container_memory = var.question_service_memory
   desired_count    = var.question_service_desired_count
 
-  # Environment Variables
-  environment_variables = {
-    DEBUG             = "false"
-    SECRET_KEY        = var.secret_key
-    ALLOWED_HOSTS     = "*"  # Allow all hosts since service is behind ALB in private VPC
-    DJANGO_USE_SQLITE = "0"
-
-    # Database Connection
-    DATABASE_URL = "postgresql://${var.db_username}:${var.db_password}@${module.rds_question.db_endpoint}/question_db"
-    DB_HOST      = module.rds_question.db_host
-    DB_PORT      = "5432"
-    DB_NAME      = "question_db"
-    DB_USER      = var.db_username
-    DB_PASSWORD  = var.db_password
-
-    # Service-to-Service URLs
-    USER_SERVICE_URL     = "http://user-service.${module.service_discovery.namespace_name}:8000"
-    MATCHING_SERVICE_URL = "http://matching-service.${module.service_discovery.namespace_name}:8000"
-    HISTORY_SERVICE_URL  = "http://history-service.${module.service_discovery.namespace_name}:8000"
-  }
+  # Environment Variables - Fetched from AWS Secrets Manager
+  environment_variables = merge(
+    {
+      AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
+      AWS_REGION      = var.aws_region
+    },
+    try({ SERVICE_PREFIX_OVERRIDE = var.service_prefix_overrides["question-service"] }, {})
+  )
 
   # IAM Roles
   task_execution_role_arn = module.ecs_cluster.task_execution_role_arn
@@ -595,6 +575,8 @@ module "ecs_service_question" {
   service_discovery_service_arn = module.service_discovery.service_discovery_services["question-service"]
 
   tags = var.tags
+
+  depends_on = [module.alb]
 }
 
 # -----------------------------------------------------------------------------
@@ -623,28 +605,14 @@ module "ecs_service_matching" {
   container_memory = var.matching_service_memory
   desired_count    = var.matching_service_desired_count
 
-  # Environment Variables
-  environment_variables = {
-    DEBUG         = "false"
-    ALLOWED_HOSTS = "*"  # Allow all hosts since service is behind ALB in private VPC
-
-    # Database Connection
-    DATABASE_URL = "postgresql://${var.db_username}:${var.db_password}@${module.rds_matching.db_endpoint}/matching_db"
-    DB_HOST      = module.rds_matching.db_host
-    DB_PORT      = "5432"
-    DB_NAME      = "matching_db"
-    DB_USER      = var.db_username
-    DB_PASSWORD  = var.db_password
-
-    # Redis Connection
-    REDIS_URL  = "redis://${module.elasticache_matching.redis_endpoint}:6379/0"
-    REDIS_HOST = module.elasticache_matching.redis_endpoint
-    REDIS_PORT = "6379"
-
-    # Service-to-Service URLs
-    USER_SERVICE_URL     = "http://user-service.${module.service_discovery.namespace_name}:8000"
-    QUESTION_SERVICE_URL = "http://question-service.${module.service_discovery.namespace_name}:8000"
-  }
+  # Environment Variables - Fetched from AWS Secrets Manager
+  environment_variables = merge(
+    {
+      AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
+      AWS_REGION      = var.aws_region
+    },
+    try({ SERVICE_PREFIX_OVERRIDE = var.service_prefix_overrides["matching-service"] }, {})
+  )
 
   # IAM Roles
   task_execution_role_arn = module.ecs_cluster.task_execution_role_arn
@@ -663,17 +631,19 @@ module "ecs_service_matching" {
   service_discovery_service_arn = module.service_discovery.service_discovery_services["matching-service"]
 
   tags = var.tags
+
+  depends_on = [module.alb]
 }
 
 # -----------------------------------------------------------------------------
-# 4. History Service
+# 4. Session Service (replaces History Service)
 # -----------------------------------------------------------------------------
-module "ecs_service_history" {
+module "ecs_service_session" {
   source = "./modules/ecs-service"
 
   project_name = var.project_name
   environment  = var.environment
-  service_name = "history-service"
+  service_name = "session-service"
 
   # ECS Configuration
   cluster_id   = module.ecs_cluster.cluster_id
@@ -685,31 +655,20 @@ module "ecs_service_history" {
   security_group_ids = [module.security_groups.ecs_security_group_id]
 
   # Container Configuration
-  container_image  = "${aws_ecr_repository.services["history-service"].repository_url}:latest"
+  container_image  = "${aws_ecr_repository.services["session-service"].repository_url}:latest"
   container_port   = 8000
-  container_cpu    = var.history_service_cpu
-  container_memory = var.history_service_memory
-  desired_count    = var.history_service_desired_count
+  container_cpu    = var.session_service_cpu
+  container_memory = var.session_service_memory
+  desired_count    = var.session_service_desired_count
 
-  # Environment Variables
-  environment_variables = {
-    DEBUG         = "false"
-    SECRET_KEY    = var.secret_key
-    ALLOWED_HOSTS = "*"  # Allow all hosts since service is behind ALB in private VPC
-
-    # Database Connection
-    DATABASE_URL = "postgresql://${var.db_username}:${var.db_password}@${module.rds_history.db_endpoint}/history_db"
-    DB_HOST      = module.rds_history.db_host
-    DB_PORT      = "5432"
-    DB_NAME      = "history_db"
-    DB_USER      = var.db_username
-    DB_PASSWORD  = var.db_password
-
-    # Service-to-Service URLs
-    USER_SERVICE_URL          = "http://user-service.${module.service_discovery.namespace_name}:8000"
-    QUESTION_SERVICE_URL      = "http://question-service.${module.service_discovery.namespace_name}:8000"
-    COLLABORATION_SERVICE_URL = "http://collaboration-service.${module.service_discovery.namespace_name}:8000"
-  }
+  # Environment Variables - Fetched from AWS Secrets Manager
+  environment_variables = merge(
+    {
+      AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
+      AWS_REGION      = var.aws_region
+    },
+    try({ SERVICE_PREFIX_OVERRIDE = var.service_prefix_overrides["session-service"] }, {})
+  )
 
   # IAM Roles
   task_execution_role_arn = module.ecs_cluster.task_execution_role_arn
@@ -721,13 +680,15 @@ module "ecs_service_history" {
 
   # Load Balancer
   enable_load_balancer = true
-  target_group_arn     = module.alb.target_group_arns["history-service"]
+  target_group_arn     = module.alb.target_group_arns["session-service"]
 
   # Service Discovery
   enable_service_discovery      = true
-  service_discovery_service_arn = module.service_discovery.service_discovery_services["history-service"]
+  service_discovery_service_arn = module.service_discovery.service_discovery_services["session-service"]
 
   tags = var.tags
+
+  depends_on = [module.alb]
 }
 
 # -----------------------------------------------------------------------------
@@ -756,22 +717,14 @@ module "ecs_service_collaboration" {
   container_memory = var.collaboration_service_memory
   desired_count    = var.collaboration_service_desired_count
 
-  # Environment Variables
-  environment_variables = {
-    DEBUG = "false"
-    PORT  = "8000"
-    SERVICE_PREFIX = "/collaboration-service-api"
-
-    # Redis Connection (for WebSocket session management)
-    REDIS_URL  = "redis://${module.elasticache_collaboration.redis_endpoint}:6379/0"
-    REDIS_HOST = module.elasticache_collaboration.redis_endpoint
-    REDIS_PORT = "6379"
-
-    # Service-to-Service URLs
-    USER_SERVICE_URL     = "http://user-service.${module.service_discovery.namespace_name}:8000"
-    QUESTION_SERVICE_URL = "http://question-service.${module.service_discovery.namespace_name}:8000"
-    CHAT_SERVICE_URL     = "http://chat-service.${module.service_discovery.namespace_name}:8000"
-  }
+  # Environment Variables - Fetched from AWS Secrets Manager
+  environment_variables = merge(
+    {
+      AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
+      AWS_REGION      = var.aws_region
+    },
+    try({ SERVICE_PREFIX_OVERRIDE = var.service_prefix_overrides["collaboration-service"] }, {})
+  )
 
   # IAM Roles
   task_execution_role_arn = module.ecs_cluster.task_execution_role_arn
@@ -790,6 +743,8 @@ module "ecs_service_collaboration" {
   service_discovery_service_arn = module.service_discovery.service_discovery_services["collaboration-service"]
 
   tags = var.tags
+
+  depends_on = [module.alb]
 }
 
 # -----------------------------------------------------------------------------
@@ -818,21 +773,14 @@ module "ecs_service_chat" {
   container_memory = var.chat_service_memory
   desired_count    = var.chat_service_desired_count
 
-  # Environment Variables
-  environment_variables = {
-    DEBUG = "false"
-    PORT  = "8000"
-    SERVICE_PREFIX = "/chat-service-api"
-
-    # Redis Connection (for WebSocket session management)
-    REDIS_URL  = "redis://${module.elasticache_chat.redis_endpoint}:6379/0"
-    REDIS_HOST = module.elasticache_chat.redis_endpoint
-    REDIS_PORT = "6379"
-
-    # Service-to-Service URLs
-    USER_SERVICE_URL          = "http://user-service.${module.service_discovery.namespace_name}:8000"
-    COLLABORATION_SERVICE_URL = "http://collaboration-service.${module.service_discovery.namespace_name}:8000"
-  }
+  # Environment Variables - Fetched from AWS Secrets Manager
+  environment_variables = merge(
+    {
+      AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
+      AWS_REGION      = var.aws_region
+    },
+    try({ SERVICE_PREFIX_OVERRIDE = var.service_prefix_overrides["chat-service"] }, {})
+  )
 
   # IAM Roles
   task_execution_role_arn = module.ecs_cluster.task_execution_role_arn
@@ -851,10 +799,68 @@ module "ecs_service_chat" {
   service_discovery_service_arn = module.service_discovery.service_discovery_services["chat-service"]
 
   tags = var.tags
+
+  depends_on = [module.alb]
 }
 
 # -----------------------------------------------------------------------------
-# 7. Frontend (React + Nginx)
+# 7. Execution Service (Code Execution with Judge0)
+# -----------------------------------------------------------------------------
+module "ecs_service_execution" {
+  source = "./modules/ecs-service"
+
+  project_name = var.project_name
+  environment  = var.environment
+  service_name = "execution-service"
+
+  # ECS Configuration
+  cluster_id   = module.ecs_cluster.cluster_id
+  cluster_name = module.ecs_cluster.cluster_name
+  vpc_id       = module.vpc.vpc_id
+
+  # Networking
+  private_subnet_ids = module.vpc.private_subnet_ids
+  security_group_ids = [module.security_groups.ecs_security_group_id]
+
+  # Container Configuration
+  container_image  = "${aws_ecr_repository.services["execution-service"].repository_url}:latest"
+  container_port   = 8000
+  container_cpu    = var.execution_service_cpu
+  container_memory = var.execution_service_memory
+  desired_count    = var.execution_service_desired_count
+
+  # Environment Variables - Fetched from AWS Secrets Manager
+  environment_variables = merge(
+    {
+      AWS_SECRET_NAME = aws_secretsmanager_secret.ecs_env.name
+      AWS_REGION      = var.aws_region
+    },
+    try({ SERVICE_PREFIX_OVERRIDE = var.service_prefix_overrides["execution-service"] }, {})
+  )
+
+  # IAM Roles
+  task_execution_role_arn = module.ecs_cluster.task_execution_role_arn
+  task_role_arn           = module.ecs_cluster.task_role_arn
+
+  # CloudWatch Logs
+  log_group_name = module.ecs_cluster.cloudwatch_log_group_name
+  aws_region     = var.aws_region
+
+  # Load Balancer
+  enable_load_balancer = true
+  target_group_arn     = module.alb.target_group_arns["execution-service"]
+
+  # Service Discovery
+  enable_service_discovery      = true
+  service_discovery_service_arn = module.service_discovery.service_discovery_services["execution-service"]
+
+  tags = var.tags
+
+  depends_on = [module.alb]
+}
+
+# -----------------------------------------------------------------------------
+# 8. Frontend (React + Nginx)
 # -----------------------------------------------------------------------------
 module "ecs_service_frontend" {
   source = "./modules/ecs-service"
@@ -879,27 +885,17 @@ module "ecs_service_frontend" {
   container_memory = var.frontend_memory
   desired_count    = var.frontend_desired_count
 
-  # Environment Variables
+  # Environment Variables - Frontend nginx configuration
+  # Note: Frontend uses nginx and needs service hostnames for proxying
   environment_variables = {
-    NODE_ENV = "production"
-
-    # Nginx proxy configuration (service hostnames for proxy_pass)
     NGINX_USER_SERVICE_HOST          = "user-service.${module.service_discovery.namespace_name}"
     NGINX_QUESTION_SERVICE_HOST      = "question-service.${module.service_discovery.namespace_name}"
     NGINX_MATCHING_SERVICE_HOST      = "matching-service.${module.service_discovery.namespace_name}"
-    NGINX_HISTORY_SERVICE_HOST       = "history-service.${module.service_discovery.namespace_name}"
+    NGINX_HISTORY_SERVICE_HOST       = "session-service.${module.service_discovery.namespace_name}"
     NGINX_SESSION_SERVICE_HOST       = "session-service.${module.service_discovery.namespace_name}"
     NGINX_COLLABORATION_SERVICE_HOST = "collaboration-service.${module.service_discovery.namespace_name}"
     NGINX_CHAT_SERVICE_HOST          = "chat-service.${module.service_discovery.namespace_name}"
-
-    # VITE build-time variables (embedded in JS bundle)
-    VITE_QUESTION_SERVICE_URL      = "/question-service-api"
-    VITE_MATCHING_SERVICE_URL      = "/matching-service-api"
-    VITE_HISTORY_SERVICE_URL       = "/history-service-api"
-    VITE_USER_SERVICE_URL          = "/user-service-api"
-    VITE_SESSION_SERVICE_URL       = "/session-service-api"
-    VITE_COLLABORATION_SERVICE_URL = "/collaboration-service-api"
-    VITE_CHAT_SERVICE_URL          = "/chat-service-api"
+    NGINX_EXECUTION_SERVICE_HOST     = "execution-service.${module.service_discovery.namespace_name}"
   }
 
   # IAM Roles
@@ -918,6 +914,8 @@ module "ecs_service_frontend" {
   enable_service_discovery = false
 
   tags = var.tags
+
+  depends_on = [module.alb]
 }
 
 # =============================================================================
@@ -928,53 +926,60 @@ module "ecs_service_frontend" {
 locals {
   autoscaling_services = {
     "user-service" = {
-      service_name      = module.ecs_service_user.service_name
-      min_capacity      = var.ecs_min_capacity
-      max_capacity      = var.ecs_max_capacity
-      cpu_target        = var.autoscaling_cpu_target
-      memory_target     = var.autoscaling_memory_target
+      service_name  = module.ecs_service_user.service_name
+      min_capacity  = var.ecs_min_capacity
+      max_capacity  = var.ecs_max_capacity
+      cpu_target    = var.autoscaling_cpu_target
+      memory_target = var.autoscaling_memory_target
     }
     "question-service" = {
-      service_name      = module.ecs_service_question.service_name
-      min_capacity      = var.ecs_min_capacity
-      max_capacity      = var.ecs_max_capacity
-      cpu_target        = var.autoscaling_cpu_target
-      memory_target     = var.autoscaling_memory_target
+      service_name  = module.ecs_service_question.service_name
+      min_capacity  = var.ecs_min_capacity
+      max_capacity  = var.ecs_max_capacity
+      cpu_target    = var.autoscaling_cpu_target
+      memory_target = var.autoscaling_memory_target
     }
     "matching-service" = {
-      service_name      = module.ecs_service_matching.service_name
-      min_capacity      = var.ecs_min_capacity
-      max_capacity      = var.ecs_max_capacity
-      cpu_target        = var.autoscaling_cpu_target
-      memory_target     = var.autoscaling_memory_target
+      service_name  = module.ecs_service_matching.service_name
+      min_capacity  = var.ecs_min_capacity
+      max_capacity  = var.ecs_max_capacity
+      cpu_target    = var.autoscaling_cpu_target
+      memory_target = var.autoscaling_memory_target
     }
-    "history-service" = {
-      service_name      = module.ecs_service_history.service_name
-      min_capacity      = var.ecs_min_capacity
-      max_capacity      = var.ecs_max_capacity
-      cpu_target        = var.autoscaling_cpu_target
-      memory_target     = var.autoscaling_memory_target
+    "session-service" = {
+      service_name  = module.ecs_service_session.service_name
+      min_capacity  = var.ecs_min_capacity
+      max_capacity  = var.ecs_max_capacity
+      cpu_target    = var.autoscaling_cpu_target
+      memory_target = var.autoscaling_memory_target
+    }
+    "execution-service" = {
+      service_name  = module.ecs_service_execution.service_name
+      min_capacity  = var.ecs_min_capacity
+      max_capacity  = var.ecs_max_capacity
+      cpu_target    = var.autoscaling_cpu_target
+      memory_target = var.autoscaling_memory_target
     }
     "collaboration-service" = {
-      service_name      = module.ecs_service_collaboration.service_name
-      min_capacity      = var.ecs_min_capacity
-      max_capacity      = var.ecs_max_capacity
-      cpu_target        = var.autoscaling_cpu_target
-      memory_target     = var.autoscaling_memory_target
+      service_name  = module.ecs_service_collaboration.service_name
+      min_capacity  = var.ecs_min_capacity
+      max_capacity  = var.ecs_max_capacity
+      cpu_target    = var.autoscaling_cpu_target
+      memory_target = var.autoscaling_memory_target
     }
     "chat-service" = {
-      service_name      = module.ecs_service_chat.service_name
-      min_capacity      = var.ecs_min_capacity
-      max_capacity      = var.ecs_max_capacity
-      cpu_target        = var.autoscaling_cpu_target
-      memory_target     = var.autoscaling_memory_target
+      service_name  = module.ecs_service_chat.service_name
+      min_capacity  = var.ecs_min_capacity
+      max_capacity  = var.ecs_max_capacity
+      cpu_target    = var.autoscaling_cpu_target
+      memory_target = var.autoscaling_memory_target
     }
     "frontend" = {
-      service_name      = module.ecs_service_frontend.service_name
-      min_capacity      = var.ecs_min_capacity
-      max_capacity      = var.ecs_max_capacity
-      cpu_target        = var.autoscaling_cpu_target
-      memory_target     = var.autoscaling_memory_target
+      service_name  = module.ecs_service_frontend.service_name
+      min_capacity  = var.ecs_min_capacity
+      max_capacity  = var.ecs_max_capacity
+      cpu_target    = var.autoscaling_cpu_target
+      memory_target = var.autoscaling_memory_target
     }
   }
 }
@@ -1010,8 +1015,8 @@ resource "aws_appautoscaling_policy" "ecs_cpu_policy" {
     }
 
     target_value       = each.value.cpu_target
-    scale_in_cooldown  = 300  # 5 minutes
-    scale_out_cooldown = 60   # 1 minute
+    scale_in_cooldown  = 300 # 5 minutes
+    scale_out_cooldown = 60  # 1 minute
   }
 }
 
@@ -1033,8 +1038,8 @@ resource "aws_appautoscaling_policy" "ecs_memory_policy" {
     }
 
     target_value       = each.value.memory_target
-    scale_in_cooldown  = 300  # 5 minutes
-    scale_out_cooldown = 60   # 1 minute
+    scale_in_cooldown  = 300 # 5 minutes
+    scale_out_cooldown = 60  # 1 minute
   }
 }
 
@@ -1057,7 +1062,464 @@ resource "aws_appautoscaling_policy" "ecs_requests_policy" {
     }
 
     target_value       = var.autoscaling_requests_target
-    scale_in_cooldown  = 300  # 5 minutes
-    scale_out_cooldown = 60   # 1 minute
+    scale_in_cooldown  = 300 # 5 minutes
+    scale_out_cooldown = 60  # 1 minute
   }
 }
+
+# =============================================================================
+# Phase 6: Kafka Event Infrastructure
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 8b. EFS for Kafka Persistent Storage
+# -----------------------------------------------------------------------------
+module "efs_kafka" {
+  source = "./modules/efs"
+
+  # Use separate provider without default tags to avoid IAM permission issues
+  providers = {
+    aws = aws.no_default_tags
+  }
+
+  project_name = var.project_name
+  environment  = var.environment
+  name         = "kafka-data"
+
+  subnet_ids         = module.vpc.private_subnet_ids
+  security_group_ids = [module.security_groups.efs_security_group_id]
+
+  # Performance settings for Kafka workload
+  performance_mode = "generalPurpose"
+  throughput_mode  = "bursting"
+  encrypted        = true
+
+  # Create access point for better permission management
+  create_access_point         = true
+  posix_user_uid              = 1000 # appuser in Kafka container
+  posix_user_gid              = 1000
+  root_directory_path         = "/kafka"
+  root_directory_permissions  = "755"
+
+  tags = {}  # Empty tags to avoid IAM permission issues
+}
+
+# -----------------------------------------------------------------------------
+# 9. Kafka Broker (KRaft Mode - No Zookeeper)
+# -----------------------------------------------------------------------------
+module "ecs_service_kafka" {
+  source = "./modules/ecs-service"
+
+  project_name = var.project_name
+  environment  = var.environment
+  service_name = "kafka"
+
+  # ECS Configuration
+  cluster_id   = module.ecs_cluster.cluster_id
+  cluster_name = module.ecs_cluster.cluster_name
+  vpc_id       = module.vpc.vpc_id
+
+  # Networking
+  private_subnet_ids = module.vpc.private_subnet_ids
+  security_group_ids = [module.security_groups.ecs_security_group_id]
+
+  # Container Configuration
+  container_image  = "992382853559.dkr.ecr.ap-southeast-1.amazonaws.com/peerprep-prod-kafka:latest"
+  container_port   = 29092
+  container_cpu    = var.kafka_cpu
+  container_memory = var.kafka_memory
+  desired_count    = 1 # Single broker for now
+  container_health_check_command = [
+    "CMD-SHELL",
+    "kafka-broker-api-versions --bootstrap-server 127.0.0.1:29092 >/dev/null 2>&1"
+  ]
+
+  # Environment Variables - Kafka KRaft Configuration
+  environment_variables = {
+    # KRaft mode configuration (no Zookeeper)
+    KAFKA_NODE_ID                   = "1"
+    KAFKA_PROCESS_ROLES             = "broker,controller"
+    KAFKA_CONTROLLER_QUORUM_VOTERS  = "1@kafka.${module.service_discovery.namespace_name}:29093"
+    KAFKA_CONTROLLER_LISTENER_NAMES = "CONTROLLER"
+    CLUSTER_ID                      = "aOge9G1DRLKAe03PP99tXQ"
+
+    # Listener configuration
+    KAFKA_LISTENERS                      = "PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093"
+    KAFKA_ADVERTISED_LISTENERS           = "PLAINTEXT://kafka.${module.service_discovery.namespace_name}:29092"
+    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP = "PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT"
+    KAFKA_INTER_BROKER_LISTENER_NAME     = "PLAINTEXT"
+
+    # Cluster configuration
+    KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR         = "1"
+    KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = "1"
+    KAFKA_TRANSACTION_STATE_LOG_MIN_ISR            = "1"
+
+    # Log configuration
+    KAFKA_LOG_DIRS                  = "/var/lib/kafka/data"
+    KAFKA_AUTO_CREATE_TOPICS_ENABLE = "true"
+
+    # Topic defaults - set cleanup policy to delete for regular topics
+    # Schema registry will override this for _schemas topic
+    KAFKA_LOG_CLEANUP_POLICY = "delete"
+  }
+
+  # EFS Volume Configuration for Persistent Storage
+  efs_volume_configuration = {
+    name                    = "kafka-data"
+    file_system_id          = module.efs_kafka.file_system_id
+    root_directory          = "/"
+    container_path          = "/var/lib/kafka/data"
+    transit_encryption      = "ENABLED"
+    transit_encryption_port = 2049
+    access_point_id         = module.efs_kafka.access_point_id
+    iam                     = "ENABLED"
+  }
+
+  # IAM Roles
+  task_execution_role_arn = module.ecs_cluster.task_execution_role_arn
+  task_role_arn           = module.ecs_cluster.task_role_arn
+
+  # CloudWatch Logs
+  log_group_name = module.ecs_cluster.cloudwatch_log_group_name
+  aws_region     = var.aws_region
+
+  # No load balancer (internal service only)
+  enable_load_balancer = false
+
+  # Service Discovery (for internal DNS)
+  enable_service_discovery      = true
+  service_discovery_service_arn = module.service_discovery.service_discovery_services["kafka"]
+
+  # Graceful shutdown timeout (2 minutes for Kafka to flush and commit)
+  stop_timeout = 120
+
+  # Deployment Configuration - CRITICAL for Kafka single broker with EFS
+  # Must stop old task before starting new one to avoid duplicate broker registration
+  deployment_minimum_healthy_percent = 0
+  deployment_maximum_percent         = 100
+
+  # Ensure EFS is created before Kafka service
+  depends_on = [module.efs_kafka]
+
+  tags = var.tags
+}
+
+# -----------------------------------------------------------------------------
+# 10. Schema Registry (Kafka Schema Management)
+# -----------------------------------------------------------------------------
+module "ecs_service_schema_registry" {
+  source = "./modules/ecs-service"
+
+  project_name = var.project_name
+  environment  = var.environment
+  service_name = "schema-registry"
+
+  # ECS Configuration
+  cluster_id   = module.ecs_cluster.cluster_id
+  cluster_name = module.ecs_cluster.cluster_name
+  vpc_id       = module.vpc.vpc_id
+
+  # Networking
+  private_subnet_ids = module.vpc.private_subnet_ids
+  security_group_ids = [module.security_groups.ecs_security_group_id]
+
+  # Container Configuration
+  container_image             = "confluentinc/cp-schema-registry:7.5.0"
+  container_port              = 8081
+  container_cpu               = var.schema_registry_cpu
+  container_memory            = var.schema_registry_memory
+  container_health_check_path = "/subjects"
+  desired_count               = 1
+
+  # Environment Variables - Schema Registry Configuration
+  # Note: Official Confluent image doesn't support our custom secrets fetcher,
+  # so we provide the minimal required config directly
+  environment_variables = {
+    SCHEMA_REGISTRY_HOST_NAME                                  = "schema-registry.${module.service_discovery.namespace_name}"
+    SCHEMA_REGISTRY_LISTENERS                                  = "http://0.0.0.0:8081"
+    SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS               = "kafka.${module.service_discovery.namespace_name}:29092"
+    SCHEMA_REGISTRY_KAFKASTORE_TOPIC                           = "_schemas"
+    SCHEMA_REGISTRY_KAFKASTORE_TOPIC_REPLICATION_FACTOR        = "1"
+    SCHEMA_REGISTRY_KAFKASTORE_INIT_TIMEOUT_MS                 = "60000"
+    SCHEMA_REGISTRY_KAFKASTORE_TIMEOUT_MS                      = "10000"
+    SCHEMA_REGISTRY_SCHEMA_REGISTRY_INTER_INSTANCE_PROTOCOL    = "http"
+    SCHEMA_REGISTRY_DEBUG                                      = "false"
+  }
+
+  # IAM Roles
+  task_execution_role_arn = module.ecs_cluster.task_execution_role_arn
+  task_role_arn           = module.ecs_cluster.task_role_arn
+
+  # CloudWatch Logs
+  log_group_name = module.ecs_cluster.cloudwatch_log_group_name
+  aws_region     = var.aws_region
+
+  # No load balancer (internal service only)
+  enable_load_balancer = false
+
+  # Service Discovery (for internal DNS)
+  enable_service_discovery      = true
+  service_discovery_service_arn = module.service_discovery.service_discovery_services["schema-registry"]
+
+  # Depends on Kafka being available
+  depends_on = [module.ecs_service_kafka]
+
+  tags = var.tags
+}
+
+# =============================================================================
+# Phase 7: Kafka Consumers (Background Tasks)
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 11. Session Service Kafka Consumer: Question Chosen
+# -----------------------------------------------------------------------------
+resource "aws_ecs_task_definition" "session_consumer_question_chosen" {
+  family                   = "${var.project_name}-${var.environment}-session-consumer-question-chosen"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = 256
+  memory                   = 512
+  execution_role_arn       = module.ecs_cluster.task_execution_role_arn
+  task_role_arn            = module.ecs_cluster.task_role_arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "session-consumer-question-chosen"
+      image     = "${aws_ecr_repository.services["session-service"].repository_url}:latest"
+      command   = ["python", "-m", "kafka.consumers.question_chosen"]
+      essential = true
+
+      environment = [
+        { name = "AWS_SECRET_NAME", value = aws_secretsmanager_secret.ecs_env.name },
+        { name = "AWS_REGION", value = var.aws_region }
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = module.ecs_cluster.cloudwatch_log_group_name
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "session-consumer-question-chosen"
+        }
+      }
+    }
+  ])
+
+  tags = merge(
+    var.tags,
+    {
+      Name    = "${var.project_name}-${var.environment}-session-consumer-question-chosen"
+      Service = "session-service"
+      Type    = "kafka-consumer"
+    }
+  )
+}
+
+resource "aws_ecs_service" "session_consumer_question_chosen" {
+  name            = "session-consumer-question-chosen"
+  cluster         = module.ecs_cluster.cluster_id
+  task_definition = aws_ecs_task_definition.session_consumer_question_chosen.arn
+  desired_count   = 1 # Only 1 consumer needed per topic
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = module.vpc.private_subnet_ids
+    security_groups  = [module.security_groups.ecs_security_group_id]
+    assign_public_ip = false
+  }
+
+  # Depends on Kafka and Schema Registry being available
+  depends_on = [
+    module.ecs_service_kafka,
+    module.ecs_service_schema_registry
+  ]
+
+  tags = merge(
+    var.tags,
+    {
+      Name    = "${var.project_name}-${var.environment}-session-consumer-question-chosen"
+      Service = "session-service"
+      Type    = "kafka-consumer"
+    }
+  )
+}
+
+# -----------------------------------------------------------------------------
+# 12. Session Service Kafka Consumer: Session End
+# -----------------------------------------------------------------------------
+resource "aws_ecs_task_definition" "session_consumer_session_end" {
+  family                   = "${var.project_name}-${var.environment}-session-consumer-session-end"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = 256
+  memory                   = 512
+  execution_role_arn       = module.ecs_cluster.task_execution_role_arn
+  task_role_arn            = module.ecs_cluster.task_role_arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "session-consumer-session-end"
+      image     = "${aws_ecr_repository.services["session-service"].repository_url}:latest"
+      command   = ["python", "-m", "kafka.consumers.session_end"]
+      essential = true
+
+      environment = [
+        { name = "AWS_SECRET_NAME", value = aws_secretsmanager_secret.ecs_env.name },
+        { name = "AWS_REGION", value = var.aws_region }
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = module.ecs_cluster.cloudwatch_log_group_name
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "session-consumer-session-end"
+        }
+      }
+    }
+  ])
+
+  tags = merge(
+    var.tags,
+    {
+      Name    = "${var.project_name}-${var.environment}-session-consumer-session-end"
+      Service = "session-service"
+      Type    = "kafka-consumer"
+    }
+  )
+}
+
+resource "aws_ecs_service" "session_consumer_session_end" {
+  name            = "session-consumer-session-end"
+  cluster         = module.ecs_cluster.cluster_id
+  task_definition = aws_ecs_task_definition.session_consumer_session_end.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = module.vpc.private_subnet_ids
+    security_groups  = [module.security_groups.ecs_security_group_id]
+    assign_public_ip = false
+  }
+
+  depends_on = [
+    module.ecs_service_kafka,
+    module.ecs_service_schema_registry
+  ]
+
+  tags = merge(
+    var.tags,
+    {
+      Name    = "${var.project_name}-${var.environment}-session-consumer-session-end"
+      Service = "session-service"
+      Type    = "kafka-consumer"
+    }
+  )
+}
+
+# -----------------------------------------------------------------------------
+# 13. Matching Service Kafka Consumer: Session Created
+# -----------------------------------------------------------------------------
+resource "aws_ecs_task_definition" "matching_consumer_session_created" {
+  family                   = "${var.project_name}-${var.environment}-matching-consumer-session-created"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = 256
+  memory                   = 512
+  execution_role_arn       = module.ecs_cluster.task_execution_role_arn
+  task_role_arn            = module.ecs_cluster.task_role_arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "matching-consumer-session-created"
+      image     = "${aws_ecr_repository.services["matching-service"].repository_url}:latest"
+      command   = ["python", "-m", "kafka.consumers.session_created"]
+      essential = true
+
+      environment = [
+        { name = "AWS_SECRET_NAME", value = aws_secretsmanager_secret.ecs_env.name },
+        { name = "AWS_REGION", value = var.aws_region }
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = module.ecs_cluster.cloudwatch_log_group_name
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "matching-consumer-session-created"
+        }
+      }
+    }
+  ])
+
+  tags = merge(
+    var.tags,
+    {
+      Name    = "${var.project_name}-${var.environment}-matching-consumer-session-created"
+      Service = "matching-service"
+      Type    = "kafka-consumer"
+    }
+  )
+}
+
+resource "aws_ecs_service" "matching_consumer_session_created" {
+  name            = "matching-consumer-session-created"
+  cluster         = module.ecs_cluster.cluster_id
+  task_definition = aws_ecs_task_definition.matching_consumer_session_created.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = module.vpc.private_subnet_ids
+    security_groups  = [module.security_groups.ecs_security_group_id]
+    assign_public_ip = false
+  }
+
+  depends_on = [
+    module.ecs_service_kafka,
+    module.ecs_service_schema_registry
+  ]
+
+  tags = merge(
+    var.tags,
+    {
+      Name    = "${var.project_name}-${var.environment}-matching-consumer-session-created"
+      Service = "matching-service"
+      Type    = "kafka-consumer"
+    }
+  )
+}
+
+# =============================================================================
+# Phase 8: AWS Secrets Manager
+# =============================================================================
+
+# Create Secrets Manager secret to store all environment variables
+resource "aws_secretsmanager_secret" "ecs_env" {
+  name        = "${var.project_name}/${var.environment}/env"
+  description = "Environment variables for ${var.project_name} ${var.environment} ECS services"
+
+  recovery_window_in_days = 7 # Allow 7 days to recover if accidentally deleted
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-${var.environment}-ecs-env"
+    }
+  )
+}
+
+# Placeholder secret version - will be updated by upload script
+resource "aws_secretsmanager_secret_version" "ecs_env" {
+  secret_id = aws_secretsmanager_secret.ecs_env.id
+  secret_string = jsonencode({
+    PLACEHOLDER = "Run scripts/upload-secrets-to-aws.sh to populate this secret"
+  })
+
+  lifecycle {
+    ignore_changes = [secret_string] # Ignore changes made by upload script
+  }
+}
+
+# =============================================================================

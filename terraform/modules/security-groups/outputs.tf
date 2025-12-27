@@ -13,7 +13,7 @@ output "ecs_security_group_id" {
 }
 
 output "db_security_group_ids" {
-  description = "Map of database security group IDs (user, question, matching, history)"
+  description = "Map of database security group IDs (user, question, matching, session)"
   value = {
     for name, sg in aws_security_group.db : name => sg.id
   }
@@ -42,9 +42,9 @@ output "matching_db_security_group_id" {
   value       = aws_security_group.db["matching"].id
 }
 
-output "history_db_security_group_id" {
-  description = "Security group ID for history database"
-  value       = aws_security_group.db["history"].id
+output "session_db_security_group_id" {
+  description = "Security group ID for session database"
+  value       = aws_security_group.db["session"].id
 }
 
 output "matching_redis_security_group_id" {
@@ -60,4 +60,9 @@ output "collaboration_redis_security_group_id" {
 output "chat_redis_security_group_id" {
   description = "Security group ID for chat Redis"
   value       = aws_security_group.redis["chat"].id
+}
+
+output "efs_security_group_id" {
+  description = "Security group ID for EFS mount targets"
+  value       = aws_security_group.efs.id
 }

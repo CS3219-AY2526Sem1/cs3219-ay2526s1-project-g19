@@ -1,0 +1,278 @@
+name: Terraform Deploy ECS
+
+on:
+  workflow_dispatch:  # Manual trigger
+    inputs:
+      action:
+        description: 'Terraform action (plan/apply/destroy)'
+        required: true
+        default: 'plan'
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+      force_new_deployment:
+        description: 'Force new ECS deployment (refresh containers)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+  workflow_run:
+    workflows: ["Build and Push to ECR"]
+    types:
+      - completed
+    branches:
+      - prod/ecs-prod
+
+env:
+  AWS_REGION: us-east-1
+  TERRAFORM_VERSION: 1.5.0
+
+jobs:
+  terraform:
+    name: Terraform ${{ github.event.inputs.action || 'plan' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./terraform
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Terraform Format Check
+        id: fmt
+        run: terraform fmt -check -recursive
+        continue-on-error: true
+
+      - name: Terraform Init
+        id: init
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TERRAFORM_STATE_BUCKET }}" \
+            -backend-config="key=peerprep/production/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}"
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan \
+            -var="aws_region=${{ env.AWS_REGION }}" \
+            -var="environment=production" \
+            -var="project_name=peerprep" \
+            -no-color \
+            -out=tfplan
+        continue-on-error: false
+
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v3
+        with:
+          name: tfplan
+          path: terraform/tfplan
+
+      - name: Terraform Plan Summary
+        run: |
+          echo "### Terraform Plan" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          terraform show -no-color tfplan | head -100 >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Terraform Apply
+        id: apply
+        if: |
+          github.event.inputs.action == 'apply' ||
+          (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+        run: |
+          terraform apply -auto-approve tfplan
+
+          # Save outputs for later steps
+          terraform output -json > outputs.json
+
+      - name: Upload Terraform Outputs
+        if: steps.apply.outcome == 'success'
+        uses: actions/upload-artifact@v3
+        with:
+          name: terraform-outputs
+          path: terraform/outputs.json
+
+      - name: Get Infrastructure Outputs
+        id: outputs
+        if: steps.apply.outcome == 'success'
+        run: |
+          # Extract key outputs
+          NAMESPACE=$(terraform output -raw service_discovery_namespace || echo "")
+          ALB_DNS=$(terraform output -raw alb_dns_name || echo "")
+          CLUSTER_NAME=$(terraform output -raw ecs_cluster_name || echo "")
+
+          echo "namespace=$NAMESPACE" >> $GITHUB_OUTPUT
+          echo "alb_dns=$ALB_DNS" >> $GITHUB_OUTPUT
+          echo "cluster_name=$CLUSTER_NAME" >> $GITHUB_OUTPUT
+
+      - name: Terraform Destroy
+        if: github.event.inputs.action == 'destroy'
+        run: |
+          terraform destroy \
+            -var="aws_region=${{ env.AWS_REGION }}" \
+            -var="environment=production" \
+            -var="project_name=peerprep" \
+            -auto-approve
+
+  force-deployment:
+    name: Force ECS Service Update
+    needs: terraform
+    runs-on: ubuntu-latest
+    if: |
+      (github.event.inputs.force_new_deployment == 'true' ||
+       github.event_name == 'workflow_run') &&
+      github.event.inputs.action != 'destroy'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - user-service
+          - question-service
+          - matching-service
+          - session-service
+          - execution-service
+          - collaboration-service
+          - chat-service
+          - frontend
+          - kafka
+          - schema-registry
+
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Force new deployment for ${{ matrix.service }}
+        run: |
+          echo "Forcing new deployment for ${{ matrix.service }}..."
+
+          aws ecs update-service \
+            --cluster peerprep-production-cluster \
+            --service ${{ matrix.service }} \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }} \
+            --no-cli-pager || echo "Service ${{ matrix.service }} update skipped (may not exist yet)"
+
+  start-kafka-consumers:
+    name: Start Kafka Consumer Tasks
+    needs: [terraform, force-deployment]
+    runs-on: ubuntu-latest
+    if: |
+      github.event.inputs.action != 'destroy' &&
+      (github.event.inputs.action == 'apply' || github.event_name == 'workflow_run')
+
+    strategy:
+      fail-fast: false
+      matrix:
+        consumer:
+          - session-consumer-question-chosen
+          - session-consumer-session-end
+          - matching-consumer-match-found
+
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Start consumer task ${{ matrix.consumer }}
+        run: |
+          echo "Starting consumer task ${{ matrix.consumer }}..."
+
+          # Get task definition
+          TASK_DEF=$(aws ecs describe-task-definition \
+            --task-definition peerprep-production-${{ matrix.consumer }} \
+            --region ${{ env.AWS_REGION }} \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+
+          # Get VPC configuration from existing service
+          SUBNETS=$(aws ecs describe-services \
+            --cluster peerprep-production-cluster \
+            --services user-service \
+            --region ${{ env.AWS_REGION }} \
+            --query 'services[0].networkConfiguration.awsvpcConfiguration.subnets' \
+            --output json)
+
+          SECURITY_GROUPS=$(aws ecs describe-services \
+            --cluster peerprep-production-cluster \
+            --services user-service \
+            --region ${{ env.AWS_REGION }} \
+            --query 'services[0].networkConfiguration.awsvpcConfiguration.securityGroups' \
+            --output json)
+
+          # Run consumer task
+          aws ecs run-task \
+            --cluster peerprep-production-cluster \
+            --task-definition $TASK_DEF \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=$SUBNETS,securityGroups=$SECURITY_GROUPS,assignPublicIp=ENABLED}" \
+            --region ${{ env.AWS_REGION }} \
+            --no-cli-pager || echo "Failed to start ${{ matrix.consumer }}"
+
+  deployment-summary:
+    name: Deployment Summary
+    needs: [terraform, force-deployment, start-kafka-consumers]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Download Terraform outputs
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-outputs
+          path: ./
+        continue-on-error: true
+
+      - name: Generate deployment summary
+        run: |
+          echo "### Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Action**: \`${{ github.event.inputs.action || 'apply' }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Triggered by**: \`${{ github.event_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f "outputs.json" ]; then
+            echo "#### Infrastructure Outputs:" >> $GITHUB_STEP_SUMMARY
+            echo '```json' >> $GITHUB_STEP_SUMMARY
+            cat outputs.json >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "#### Next Steps:" >> $GITHUB_STEP_SUMMARY
+          echo "1. Verify services are healthy in ECS console" >> $GITHUB_STEP_SUMMARY
+          echo "2. Check ALB target groups are healthy" >> $GITHUB_STEP_SUMMARY
+          echo "3. Test application endpoints" >> $GITHUB_STEP_SUMMARY
+          echo "4. Monitor CloudWatch logs for errors" >> $GITHUB_STEP_SUMMARY

@@ -33,10 +33,16 @@ SERVICES=(
     "user-service"
     "question-service"
     "matching-service"
-    "history-service"
+    "session-service"
+    "execution-service"
     "collaboration-service"
     "chat-service"
     "frontend"
+)
+
+INFRA_SERVICES=(
+    "kafka"
+    "schema-registry"
 )
 
 # Get ALB DNS
@@ -73,7 +79,7 @@ echo ""
 # -----------------------------------------------------------------------------
 echo -e "${BLUE}[2/7] Checking RDS Databases...${NC}"
 
-DB_SERVICES=("user" "question" "matching" "history")
+DB_SERVICES=("user" "question" "matching" "session")
 for SERVICE in "${DB_SERVICES[@]}"; do
     DB_ID="${PROJECT_NAME}-${ENVIRONMENT}-${SERVICE}-postgres"
     DB_STATUS=$(aws rds describe-db-instances \
@@ -191,6 +197,37 @@ for SERVICE in "${SERVICES[@]}"; do
 done
 echo ""
 
+if [ ${#INFRA_SERVICES[@]} -gt 0 ]; then
+    echo -e "${BLUE}Additional ECS infrastructure services...${NC}"
+    for SERVICE in "${INFRA_SERVICES[@]}"; do
+        SERVICE_NAME="${PROJECT_NAME}-${ENVIRONMENT}-${SERVICE}"
+
+        SERVICE_INFO=$(aws ecs describe-services \
+            --cluster "$CLUSTER_NAME" \
+            --services "$SERVICE_NAME" \
+            --region "$AWS_REGION" 2>/dev/null || echo "")
+
+        if [ -n "$SERVICE_INFO" ]; then
+            DESIRED=$(echo "$SERVICE_INFO" | jq -r '.services[0].desiredCount')
+            RUNNING=$(echo "$SERVICE_INFO" | jq -r '.services[0].runningCount')
+            STATUS=$(echo "$SERVICE_INFO" | jq -r '.services[0].status')
+
+            if [ "$STATUS" == "ACTIVE" ] && [ "$RUNNING" == "$DESIRED" ]; then
+                echo -e "${GREEN}✓${NC} $SERVICE: $RUNNING/$DESIRED tasks running"
+            elif [ "$STATUS" == "ACTIVE" ]; then
+                echo -e "${YELLOW}⚠${NC} $SERVICE: $RUNNING/$DESIRED tasks running (starting up...)"
+            else
+                echo -e "${RED}✗${NC} $SERVICE: Status=$STATUS, $RUNNING/$DESIRED tasks"
+                FAILED=1
+            fi
+        else
+            echo -e "${RED}✗${NC} $SERVICE: not found"
+            FAILED=1
+        fi
+    done
+    echo ""
+fi
+
 # -----------------------------------------------------------------------------
 # 6. Check Application Load Balancer
 # -----------------------------------------------------------------------------
@@ -249,7 +286,7 @@ if [ -n "$ALB_DNS" ]; then
     fi
 
     # Test backend services (if health endpoints exist)
-    for SERVICE in "user-service" "question-service" "matching-service" "history-service"; do
+    for SERVICE in "user-service" "question-service" "matching-service" "session-service" "execution-service"; do
         echo -n "Testing $SERVICE (/health)... "
         HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
             "http://${ALB_DNS}/${SERVICE}-api/health" --max-time 10 2>/dev/null || echo "000")

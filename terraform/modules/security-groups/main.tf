@@ -145,7 +145,7 @@ resource "aws_vpc_security_group_egress_rule" "ecs_all" {
 # RDS PostgreSQL Security Groups (4 databases)
 # =============================================================================
 locals {
-  db_names = ["user", "question", "matching", "history"]
+  db_names = ["user", "question", "matching", "session"] # Replaced history with session
 }
 
 resource "aws_security_group" "db" {
@@ -188,11 +188,11 @@ resource "aws_vpc_security_group_ingress_rule" "db_from_local_ip" {
   security_group_id = aws_security_group.db[each.key].id
   description       = "Allow PostgreSQL from Local IP for Migrations"
 
-  from_port         = 5432
-  to_port           = 5432
-  ip_protocol       = "tcp"
+  from_port   = 5432
+  to_port     = 5432
+  ip_protocol = "tcp"
   # 🛑 ACTION: Use the IP you just found, 137.132.26.199
-  cidr_ipv4         = "137.132.26.199/32" 
+  cidr_ipv4 = "137.132.26.199/32"
 
   tags = {
     Name = "${each.key}-db-from-local-ip"
@@ -266,5 +266,49 @@ resource "aws_vpc_security_group_egress_rule" "redis_all" {
 
   tags = {
     Name = "${each.key}-redis-egress"
+  }
+}
+
+# =============================================================================
+# EFS Security Group
+# =============================================================================
+resource "aws_security_group" "efs" {
+  name        = "${var.project_name}-${var.environment}-efs-sg"
+  description = "Security group for EFS mount targets"
+  vpc_id      = var.vpc_id
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.project_name}-${var.environment}-efs-sg"
+    }
+  )
+}
+
+# EFS Ingress: NFS from ECS tasks
+resource "aws_vpc_security_group_ingress_rule" "efs_from_ecs" {
+  security_group_id = aws_security_group.efs.id
+  description       = "Allow NFS from ECS tasks"
+
+  from_port                    = 2049
+  to_port                      = 2049
+  ip_protocol                  = "tcp"
+  referenced_security_group_id = aws_security_group.ecs.id
+
+  tags = {
+    Name = "efs-from-ecs"
+  }
+}
+
+# EFS Egress: Allow all outbound
+resource "aws_vpc_security_group_egress_rule" "efs_all" {
+  security_group_id = aws_security_group.efs.id
+  description       = "Allow all outbound traffic"
+
+  ip_protocol = "-1"
+  cidr_ipv4   = "0.0.0.0/0"
+
+  tags = {
+    Name = "efs-all-egress"
   }
 }

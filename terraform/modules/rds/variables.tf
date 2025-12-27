@@ -26,7 +26,7 @@ variable "security_group_ids" {
 variable "engine_version" {
   description = "PostgreSQL engine version"
   type        = string
-  default     = "15.4"
+  default     = "15.14"
 }
 
 variable "db_instance_class" {
@@ -62,7 +62,7 @@ variable "master_password" {
 variable "database_names" {
   description = "List of database names to create"
   type        = list(string)
-  default     = ["question_db", "matching_db", "history_db", "user_db"]
+  default     = ["question_db", "matching_db", "session_db", "user_db"]
 }
 
 variable "multi_az" {

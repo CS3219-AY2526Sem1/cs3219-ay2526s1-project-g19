@@ -1,4 +1,4 @@
-import os
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -14,7 +14,10 @@ class Settings(BaseSettings):
     
     # Server configuration
     log_level: str = "INFO"
-    service_prefix: str = "/collaboration-service-api"
+    service_prefix: str = Field(
+        default="/collaboration-service-api",
+        validation_alias=AliasChoices("COLLABORATION_SERVICE_PREFIX", "SERVICE_PREFIX")
+    )
     redis_url: str = "redis://localhost:6379"
     port: int = 8005
     

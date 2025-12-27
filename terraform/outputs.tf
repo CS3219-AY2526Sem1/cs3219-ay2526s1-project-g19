@@ -65,36 +65,36 @@ output "redis_security_group_ids" {
 # Phase 2: RDS Outputs
 # -----------------------------------------------------------------------------
 output "rds_user_endpoint" {
-  description = "User database endpoint"
-  value       = module.rds_user.db_endpoint
+  description = "User database hostname (without port)"
+  value       = module.rds_user.db_host
   sensitive   = true
 }
 
 output "rds_question_endpoint" {
-  description = "Question database endpoint"
-  value       = module.rds_question.db_endpoint
+  description = "Question database hostname (without port)"
+  value       = module.rds_question.db_host
   sensitive   = true
 }
 
 output "rds_matching_endpoint" {
-  description = "Matching database endpoint"
-  value       = module.rds_matching.db_endpoint
+  description = "Matching database hostname (without port)"
+  value       = module.rds_matching.db_host
   sensitive   = true
 }
 
-output "rds_history_endpoint" {
-  description = "History database endpoint"
-  value       = module.rds_history.db_endpoint
+output "rds_session_endpoint" {
+  description = "Session database hostname (without port)"
+  value       = module.rds_session.db_host
   sensitive   = true
 }
 
 output "rds_connection_strings" {
   description = "Database connection strings for services"
   value = {
-    user_db     = "postgresql://${var.db_username}:****@${module.rds_user.db_host}:${module.rds_user.db_port}/user_db"
-    question_db = "postgresql://${var.db_username}:****@${module.rds_question.db_host}:${module.rds_question.db_port}/question_db"
-    matching_db = "postgresql://${var.db_username}:****@${module.rds_matching.db_host}:${module.rds_matching.db_port}/matching_db"
-    history_db  = "postgresql://${var.db_username}:****@${module.rds_history.db_host}:${module.rds_history.db_port}/history_db"
+    user_db     = "postgresql://${var.db_username}:****@${module.rds_user.db_host}:${module.rds_user.db_port}/user_db?sslmode=require"
+    question_db = "postgresql://${var.db_username}:****@${module.rds_question.db_host}:${module.rds_question.db_port}/question_db?sslmode=require"
+    matching_db = "postgresql://${var.db_username}:****@${module.rds_matching.db_host}:${module.rds_matching.db_port}/matching_db?sslmode=require"
+    session_db  = "postgresql://${var.db_username}:****@${module.rds_session.db_host}:${module.rds_session.db_port}/session_db?sslmode=require"
   }
   sensitive = true
 }
@@ -225,39 +225,48 @@ output "ecr_repository_urls" {
 output "ecs_service_names" {
   description = "Names of all ECS services"
   value = {
-    user          = module.ecs_service_user.service_name
-    question      = module.ecs_service_question.service_name
-    matching      = module.ecs_service_matching.service_name
-    history       = module.ecs_service_history.service_name
-    collaboration = module.ecs_service_collaboration.service_name
-    chat          = module.ecs_service_chat.service_name
-    frontend      = module.ecs_service_frontend.service_name
+    user            = module.ecs_service_user.service_name
+    question        = module.ecs_service_question.service_name
+    matching        = module.ecs_service_matching.service_name
+    session         = module.ecs_service_session.service_name
+    execution       = module.ecs_service_execution.service_name
+    collaboration   = module.ecs_service_collaboration.service_name
+    chat            = module.ecs_service_chat.service_name
+    frontend        = module.ecs_service_frontend.service_name
+    kafka           = module.ecs_service_kafka.service_name
+    schema_registry = module.ecs_service_schema_registry.service_name
   }
 }
 
 output "ecs_service_arns" {
   description = "ARNs of all ECS services"
   value = {
-    user          = module.ecs_service_user.service_arn
-    question      = module.ecs_service_question.service_arn
-    matching      = module.ecs_service_matching.service_arn
-    history       = module.ecs_service_history.service_arn
-    collaboration = module.ecs_service_collaboration.service_arn
-    chat          = module.ecs_service_chat.service_arn
-    frontend      = module.ecs_service_frontend.service_arn
+    user            = module.ecs_service_user.service_arn
+    question        = module.ecs_service_question.service_arn
+    matching        = module.ecs_service_matching.service_arn
+    session         = module.ecs_service_session.service_arn
+    execution       = module.ecs_service_execution.service_arn
+    collaboration   = module.ecs_service_collaboration.service_arn
+    chat            = module.ecs_service_chat.service_arn
+    frontend        = module.ecs_service_frontend.service_arn
+    kafka           = module.ecs_service_kafka.service_arn
+    schema_registry = module.ecs_service_schema_registry.service_arn
   }
 }
 
 output "ecs_task_definition_arns" {
   description = "ARNs of all ECS task definitions"
   value = {
-    user          = module.ecs_service_user.task_definition_arn
-    question      = module.ecs_service_question.task_definition_arn
-    matching      = module.ecs_service_matching.task_definition_arn
-    history       = module.ecs_service_history.task_definition_arn
-    collaboration = module.ecs_service_collaboration.task_definition_arn
-    chat          = module.ecs_service_chat.task_definition_arn
-    frontend      = module.ecs_service_frontend.task_definition_arn
+    user            = module.ecs_service_user.task_definition_arn
+    question        = module.ecs_service_question.task_definition_arn
+    matching        = module.ecs_service_matching.task_definition_arn
+    session         = module.ecs_service_session.task_definition_arn
+    execution       = module.ecs_service_execution.task_definition_arn
+    collaboration   = module.ecs_service_collaboration.task_definition_arn
+    chat            = module.ecs_service_chat.task_definition_arn
+    frontend        = module.ecs_service_frontend.task_definition_arn
+    kafka           = module.ecs_service_kafka.task_definition_arn
+    schema_registry = module.ecs_service_schema_registry.task_definition_arn
   }
 }
 
@@ -277,23 +286,24 @@ output "deployment_summary" {
       user          = "${module.alb.alb_url}/user-service-api"
       question      = "${module.alb.alb_url}/question-service-api"
       matching      = "${module.alb.alb_url}/matching-service-api"
-      history       = "${module.alb.alb_url}/history-service-api"
+      session       = "${module.alb.alb_url}/session-service-api"
+      execution     = "${module.alb.alb_url}/execution-service-api"
       collaboration = "${module.alb.alb_url}/collaboration-service-api"
       chat          = "${module.alb.alb_url}/chat-service-api"
     }
 
     # Infrastructure
-    vpc_id               = module.vpc.vpc_id
-    ecs_cluster_name     = module.ecs_cluster.cluster_name
-    service_discovery    = module.service_discovery.namespace_name
+    vpc_id            = module.vpc.vpc_id
+    ecs_cluster_name  = module.ecs_cluster.cluster_name
+    service_discovery = module.service_discovery.namespace_name
 
     # Resources Created
     resources = {
-      rds_instances       = 4
-      redis_clusters      = 3
-      ecs_services        = 7
-      ecr_repositories    = 7
-      availability_zones  = 2
+      rds_instances      = 4
+      redis_clusters     = 3
+      ecs_services       = 10
+      ecr_repositories   = 10
+      availability_zones = 2
       nat_gateways       = 1
     }
 
@@ -312,10 +322,10 @@ output "ecr_push_commands" {
   description = "Commands to push Docker images to ECR"
   value = {
     for name, repo in aws_ecr_repository.services : name => {
-      login   = "aws ecr get-login-password --region ${var.aws_region} | docker login --username AWS --password-stdin ${split("/", repo.repository_url)[0]}"
-      build   = "docker build -t ${name} ./<path-to-${name}>"
-      tag     = "docker tag ${name}:latest ${repo.repository_url}:latest"
-      push    = "docker push ${repo.repository_url}:latest"
+      login = "aws ecr get-login-password --region ${var.aws_region} | docker login --username AWS --password-stdin ${split("/", repo.repository_url)[0]}"
+      build = "docker build -t ${name} ./<path-to-${name}>"
+      tag   = "docker tag ${name}:latest ${repo.repository_url}:latest"
+      push  = "docker push ${repo.repository_url}:latest"
     }
   }
 }
